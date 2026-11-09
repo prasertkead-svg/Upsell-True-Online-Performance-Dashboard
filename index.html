@@ -396,7 +396,7 @@ async function publishData(data,pubPw,admPw,statEl,done){
     const art=await claude.use('artifact');
     if(!art)throw{code:'unavailable'};
     await art.publish({'data.json':{content:JSON.stringify(P),contentType:'application/json'}});
-    PAY=P;D=data;ADM={pw:admPw,pubPw};
+    PAY=P;LASTIV=P.data.iv;D=data;ADM={pw:admPw,pubPw};
     UI.month=0;initModel();F={rg:'',ar:'',ty:''};fillFilters();$('#fRg').value='';$('#fTy').value='';renderAll();renderAdmin();
     setStat(statEl,done||'บันทึกเรียบร้อย ผู้ใช้ทุกคนจะเห็นข้อมูลใหม่','ok');
   }catch(e){
@@ -457,12 +457,43 @@ function initModel(){
   ST=D.staff.map((a,i)=>({i,id:a[0],name:a[1],pos:a[2],et:a[3],sh:a[4],tg:on?a[5]:0,tg0:a[5]}));
   shopRec=SH.map(s=>newRec(s.tg,s.tg0));staffRec=ST.map(s=>newRec(s.tg,s.tg0));
   for(const [m,d,si,ei,c,v] of D.sales){upd(shopRec[si],m,d,c,v);if(ei>=0)upd(staffRec[ei],m,d,c,v)}
-  $('#asof').textContent=`${latest?`ข้อมูล ณ ${cal.E} ${TH_M[cal.cm-1]} ${cal.Y+543}`:`เดือน ${TH_M[cal.cm-1]} ${cal.Y+543} (ทั้งเดือน)`} · เดือนที่แล้ว = ${TH_M[cal.pm-1]} · มุมมอง: ${UI.metric==='qty'?'QTY (จำนวนรายการ)':'Revenue (฿)'}`;
+  $('#asof').textContent=`${latest?`ข้อมูล ณ ${cal.E} ${TH_M[cal.cm-1]} ${cal.Y+543}`:`เดือน ${TH_M[cal.cm-1]} ${cal.Y+543} (ทั้งเดือน)`} · เดือนที่แล้ว = ${TH_M[cal.pm-1]} · มุมมอง: ${UI.metric==='qty'?'QTY (จำนวนรายการ)':'Revenue (฿)'} · ซิงค์ข้อมูลอัตโนมัติทุก 30 วินาที`;
   fillMonths(ml);
   $('#foot').textContent=`แหล่งข้อมูล: ${(D.meta&&D.meta.file)||'Refrash_UPSELL.xlsx'} (Raw, TARGET, TARGET STAFF, Shop list) · ยอดขาย = NET_RC ตามวันที่ INTRACN_DT_CMPLET · ใช้เฉพาะร้านที่อยู่ใน Shop list (${SH.length} ร้าน) ร้านที่ไม่อยู่ในรายการถูกตัดออก`;
 }
+/* ---------- live sync: pick up newly published data without reload ---------- */
+const LIVE_MS=30000;let LASTIV='',LIVEBUSY=false,LIVET=null;
+async function fetchPay(){
+  for(const u of ['data.json?t='+Date.now(),'data.json']){
+    try{const r=await fetch(u,{cache:'no-store'});if(r.ok)return await r.json()}catch(e){}
+  }
+  return null;
+}
+async function checkLive(){
+  if(!D||LIVEBUSY||document.getElementById('app').hidden)return;
+  LIVEBUSY=true;
+  try{
+    const P=await fetchPay();
+    if(!P||!P.data||P.data.iv===LASTIV)return;
+    let r;
+    try{r=await openPayload(P,ADM.pw)}
+    catch(e){clearInterval(LIVET);flash('มีการเปลี่ยนรหัสผ่านหรือข้อมูลใหม่ กรุณาเข้าสู่ระบบอีกครั้ง');setTimeout(()=>location.reload(),2500);return}
+    LASTIV=P.data.iv;PAY=P;D=r.data;ROLE=r.role;ADM.pubPw=r.pubPw;
+    const keep={rg:F.rg,ar:F.ar,ty:F.ty};
+    initModel();fillFilters();
+    F=keep;if(!SH.some(x=>x.rg===F.rg))F.rg='';$('#fRg').value=F.rg;fillAreas();if(!SH.some(x=>x.ar===F.ar))F.ar='';$('#fAr').value=F.ar;
+    if(!SH.some(x=>x.ty===F.ty))F.ty='';$('#fTy').value=F.ty;
+    renderAll();if(UI.tab==='admin')renderAdmin();
+    flash('อัปเดตข้อมูลล่าสุดแล้ว (ข้อมูล ณ '+D.asof+')');
+  }finally{LIVEBUSY=false}
+}
+function startLive(){
+  LASTIV=PAY&&PAY.data?PAY.data.iv:'';clearInterval(LIVET);LIVET=setInterval(checkLive,LIVE_MS);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkLive()});
+  window.addEventListener('online',checkLive);
+}
 function boot(){
-  initModel();$('#tabAdmin').hidden=ROLE!=='adm';fillFilters();bindUI();showTab('overall');renderAll();
+  startLive();initModel();$('#tabAdmin').hidden=ROLE!=='adm';fillFilters();bindUI();showTab('overall');renderAll();
 }
 
 /* ---------- filters ---------- */
