@@ -116,6 +116,7 @@ td.nm{max-width:260px;overflow:hidden;text-overflow:ellipsis}
 .fld label{font-size:12px;color:var(--muted)}
 .fld input{height:36px;border:1px solid var(--line);border-radius:8px;padding:0 10px;background:var(--surface2);font-family:var(--mono)}
 .stat{padding:8px 12px;border-radius:8px;font-size:13px;background:var(--infobg);color:var(--ink);margin:10px 0}
+.pbar{height:8px;border-radius:6px;background:var(--infobg);overflow:hidden;margin:-4px 0 10px}.pbar i{display:block;height:100%;width:0;background:var(--accent,#4f46e5);border-radius:6px;transition:width .15s}
 .stat.err{background:var(--critbg);color:var(--crit)}.stat.ok{background:var(--goodbg);color:var(--good)}
 footer{margin-top:20px;font-size:12px;color:var(--muted)}
 @media (prefers-reduced-motion:no-preference){.k,.card{transition:border-color .15s}}
@@ -413,17 +414,20 @@ function renderAdmin(){
   if(!$('#aPub').value)$('#aPub').value=ADM.pubPw||'';
   if(!$('#aAdm').value)$('#aAdm').value=ADM.pw||'';
 }
-function setStat(el,msg,cls){el.hidden=!msg;el.textContent=msg||'';el.className='stat'+(cls?' '+cls:'')}
+const YLD=()=>new Promise(r=>setTimeout(r,0));
+function prog(el,pct,msg){pct=Math.max(0,Math.min(100,pct));setStat(el,`${msg} ${Math.round(pct)}%`);let b=el.nextElementSibling;if(!(b&&b.classList.contains('pbar'))){b=document.createElement('div');b.className='pbar';b.innerHTML='<i></i>';el.after(b)}b.hidden=false;b.firstChild.style.width=pct+'%'}
+function setStat(el,msg,cls){const b=el.nextElementSibling;if(b&&b.classList.contains('pbar'))b.hidden=true;el.hidden=!msg;el.textContent=msg||'';el.className='stat'+(cls?' '+cls:'')}
 async function onFile(e){
   const f=e.target.files[0];NEWD=null;$('#aSave').disabled=true;$('#aPrev').innerHTML='';if(!f)return;
   const st=$('#aStat');
   try{
     if(!window.XLSX)throw new Error('โหลดตัวอ่าน Excel ไม่สำเร็จ ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่');
-    setStat(st,'กำลังอ่านไฟล์…');
+    prog(st,5,'กำลังโหลดไฟล์');
     await new Promise(r=>setTimeout(r,30));
-    const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});
+    const ab=await f.arrayBuffer();prog(st,25,'กำลังอ่าน Excel');await YLD();
+    const wb=XLSX.read(ab,{type:'array'});prog(st,60,'กำลังจัดข้อมูล');await YLD();
     const R={raw:readTbl(wb,'Raw','UPSELL_TYPE'),target:readTbl(wb,'TARGET','CODE'),staff:readTbl(wb,'TARGET STAFF','EMP_ID'),shops:readTbl(wb,'Shop list','SHOP CODE')};
-    NEWD=buildDataset(R,f.name);
+    prog(st,80,'กำลังคำนวณ');await YLD();NEWD=buildDataset(R,f.name);
     const n=summarize(NEWD),o=summarize(D);
     $('#aPrev').innerHTML=`<div class="sc open"><table><thead><tr><th>รายการ</th><th class="n">ข้อมูลเดิม</th><th class="n">ข้อมูลใหม่</th></tr></thead><tbody>
       <tr><td>ข้อมูล ณ วันที่</td><td class="n">${o.asof}</td><td class="n">${n.asof}</td></tr>
@@ -442,28 +446,33 @@ let PENDIV='',PENDUNTIL=0;
 function adoptTok(){const el=$('#kTok');const t=el&&el.value.trim();if(t&&!ghCfg().token){const c=ghCfg();store.set(GH_KEY,JSON.stringify({token:t,repo:c.repo||GH_DEF,branch:c.branch||'main'}))}}
 function autoUp(btn){adoptTok();if(typeof claude!=='undefined'||ghCfg().token){setTimeout(()=>{if(!btn.disabled)btn.click()},50);return true}const g=$('#aGh');if(g){g.hidden=false;setStat($('#ghStat'),'วาง GitHub Token ครั้งเดียว แล้วกดบันทึก ระบบจะอัปโหลดไฟล์ที่เลือกขึ้น GitHub ให้ทันที','')}const w=$('#kTokW');if(w&&btn.id==='aKitSave'){w.hidden=false;setStat($('#aKitStat'),'อ่านไฟล์สำเร็จ วาง GitHub Token ในช่องด้านบน (ครั้งเดียว) ระบบจะบันทึกและแสดงผลทันที','ok');$('#kTok').focus()}return false}
 function ghCfg(){try{return JSON.parse(store.get(GH_KEY)||'null')||{}}catch(e){return{}}}
-async function ghPush(P,retry){
+async function ghPush(P,retry,onP){
   const c=ghCfg();const repo=(c.repo||GH_DEF).trim(),br=(c.branch||'main').trim(),path='data.json';
   const api=`https://api.github.com/repos/${repo}/contents/${path}`;
   const h={Authorization:'Bearer '+c.token,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};
   let sha;const g=await fetch(api+'?ref='+encodeURIComponent(br),{headers:h,cache:'no-store'});
   if(g.ok){sha=(await g.json()).sha}else if(g.status!==404)throw{code:'gh_'+g.status};
   const body={message:'Update data.json from Admin',content:b64(te.encode(JSON.stringify(P))),branch:br};if(sha)body.sha=sha;
-  const r=await fetch(api,{method:'PUT',headers:{...h,'Content-Type':'application/json'},body:JSON.stringify(body)});
-  if(!r.ok){if((r.status===409||r.status===422)&&!retry)return ghPush(P,true);throw{code:'gh_'+r.status}}
+  const st=await new Promise((res,rej)=>{const x=new XMLHttpRequest();x.open('PUT',api);for(const k in h)x.setRequestHeader(k,h[k]);x.setRequestHeader('Content-Type','application/json');
+    if(onP&&x.upload)x.upload.onprogress=ev=>{if(ev.lengthComputable)onP(ev.loaded/ev.total)};
+    x.onload=()=>res(x.status);x.onerror=()=>rej({code:'gh_net'});x.send(JSON.stringify(body))});
+  if(st<200||st>=300){if((st===409||st===422)&&!retry)return ghPush(P,true,onP);throw{code:'gh_'+st}}
 }
 function shrinkImg(src,max,q){return new Promise(res=>{if(!/^data:image\/(png|jpe?g)/.test(src))return res(src);const im=new Image();im.onload=()=>{try{const k=Math.min(1,max/Math.max(im.width,im.height));const c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.width*k));c.height=Math.max(1,Math.round(im.height*k));const x=c.getContext('2d');x.drawImage(im,0,0,c.width,c.height);const png=/png/.test(src);let o=png?c.toDataURL('image/webp',q):c.toDataURL('image/jpeg',q);if(png&&!/^data:image\/webp/.test(o))o=c.toDataURL('image/png');res(o.length<src.length?o:src)}catch(e){res(src)}};im.onerror=()=>res(src);im.src=src})}
-async function shrinkData(data,lvl){
+async function shrinkData(data,lvl,onP){
   if(!data.kit)return data;const kit=JSON.parse(JSON.stringify(data.kit));
-  for(const sl of kit.slides)for(const e of sl.els)if(e.t==='pic'&&e.src)e.src=await shrinkImg(e.src,lvl?700:1280,lvl?0.55:0.8);
+  const pics=[];for(const sl of kit.slides)for(const e of sl.els)if(e.t==='pic'&&e.src)pics.push(e);let n=0;
+  for(const e of pics){e.src=await shrinkImg(e.src,lvl?700:1280,lvl?0.55:0.8);if(onP)onP(++n/pics.length)}
   return{...data,kit};
 }
 async function publishData(data,pubPw,admPw,statEl,done){
-  data=await shrinkData(data,0);
   try{
-    setStat(statEl,'กำลังเข้ารหัสและบันทึก…');
+    prog(statEl,1,'กำลังเตรียมข้อมูล');await YLD();
+    data=await shrinkData(data,0,p=>prog(statEl,1+p*39,'กำลังย่อรูปภาพ'));
+    prog(statEl,45,'กำลังเข้ารหัส');await YLD();
     const g0=ghCfg();
     let P=await sealPayload(data,pubPw,admPw,g0.token?g0:null);
+    prog(statEl,60,'กำลังบันทึก');
     const art=typeof claude!=='undefined'?await claude.use('artifact'):null;
     let mode='claude';
     if(art){
@@ -475,7 +484,7 @@ async function publishData(data,pubPw,admPw,statEl,done){
         await art.publish({'data.json':{content:JSON.stringify(P),contentType:'application/json'}});
       }
     }
-    else if(ghCfg().token){setStat(statEl,'กำลังอัปโหลดขึ้น GitHub…');await ghPush(P);mode='gh'}
+    else if(ghCfg().token){prog(statEl,62,'กำลังอัปโหลดขึ้น GitHub');await ghPush(P,false,p=>prog(statEl,62+p*36,'กำลังอัปโหลดขึ้น GitHub'));mode='gh'}
     else{mode='local';browserSave('data.json',JSON.stringify(P),'application/json')}
     PENDIV=PAY&&PAY.data?PAY.data.iv:'';PENDUNTIL=Date.now()+(mode==='gh'?6*60000:0);
     PAY=P;LASTIV=P.data.iv;D=data;ADM={pw:admPw,pubPw};
@@ -500,9 +509,9 @@ function bindAdmin(){
   $('#akit').onchange=async e=>{
     const f=e.target.files[0];NEWK=null;$('#aKitSave').disabled=true;if(!f)return;const st=$('#aKitStat');
     try{
-      setStat(st,'กำลังอ่านไฟล์…');await new Promise(r=>setTimeout(r,30));
+      prog(st,2,'กำลังโหลดไฟล์');await new Promise(r=>setTimeout(r,30));
       if(typeof DecompressionStream==='undefined')throw new Error('เบราว์เซอร์นี้ไม่รองรับ กรุณาใช้ Chrome/Edge/Safari รุ่นใหม่');
-      NEWK=await kitParse(await f.arrayBuffer(),'');
+      NEWK=await kitParse(await f.arrayBuffer(),'',p=>prog(st,5+p*90,'กำลังอ่านสไลด์'));prog(st,98,'กำลังตรวจสอบข้อมูล');await YLD();
       if(!NEWK.slides.length)throw new Error('ไม่พบสไลด์ในไฟล์');
       setStat(st,`อ่านไฟล์สำเร็จ ${NEWK.slides.length} สไลด์ (ขนาดข้อมูล ${(JSON.stringify(NEWK).length/1048576).toFixed(1)} MB) กดบันทึกเพื่อเผยแพร่`,'ok');$('#aKitSave').disabled=false;autoUp($('#aKitSave'));
     }catch(x){NEWK=null;setStat(st,'อ่านไฟล์ไม่สำเร็จ: '+(x.message||x),'err')}
@@ -1168,7 +1177,7 @@ function rgb2hsl(r,g,b){r/=255;g/=255;b/=255;const mx=Math.max(r,g,b),mn=Math.mi
   if(mx!==mn){const d=mx-mn;s=l>.5?d/(2-mx-mn):d/(mx+mn);h=mx===r?(g-b)/d+(g<b?6:0):mx===g?(b-r)/d+2:(r-g)/d+4;h/=6}
   return[h,s,l]}
 
-async function kitParse(buf,fname){
+async function kitParse(buf,fname,onP){
   const Z=await zipRead(buf),dp=new DOMParser();
   const xmlCache=new Map(),relCache=new Map();
   const xml=async p=>{if(xmlCache.has(p))return xmlCache.get(p);const d=await Z.get(p);const x=d?dp.parseFromString(new TextDecoder().decode(d),'application/xml').documentElement:null;xmlCache.set(p,x);return x};
@@ -1198,7 +1207,8 @@ async function kitParse(buf,fname){
     themeCache.set(masterPath,cs);return cs;
   };
   const slides=[];
-  for(const sr of sids){
+  let si=0;for(const sr of sids){
+    if(onP){onP(si++/Math.max(1,sids.length));await YLD()}
     if(!sr)continue;
     const sp=sr.abs,sx=await xml(sp);if(!sx)continue;
     const srel=await rels(sp);let layP=null;for(const r of srel.values())if(r.ty==='slideLayout')layP=r.abs;
