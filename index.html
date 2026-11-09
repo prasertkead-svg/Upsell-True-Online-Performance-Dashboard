@@ -476,7 +476,7 @@ function initModel(){
   ST=D.staff.map((a,i)=>({i,id:a[0],name:a[1],pos:a[2],et:a[3],sh:a[4],tg:on?a[5]:0,tg0:a[5]}));
   shopRec=SH.map(s=>newRec(s.tg,s.tg0));staffRec=ST.map(s=>newRec(s.tg,s.tg0));
   for(const [m,d,si,ei,c,v] of D.sales){upd(shopRec[si],m,d,c,v);if(ei>=0)upd(staffRec[ei],m,d,c,v)}
-  $('#asof').textContent=`${latest?`ข้อมูล ณ ${cal.E} ${TH_M[cal.cm-1]} ${cal.Y+543}`:`เดือน ${TH_M[cal.cm-1]} ${cal.Y+543} (ทั้งเดือน)`} · เดือนที่แล้ว = ${TH_M[cal.pm-1]} · มุมมอง: ${UI.metric==='qty'?'QTY (จำนวนรายการ)':'Revenue (฿)'} · ซิงค์ข้อมูลอัตโนมัติทุก 30 วินาที`;
+  $('#asof').textContent=`${latest?`ข้อมูล ณ ${cal.E} ${TH_M[cal.cm-1]} ${cal.Y+543}`:`เดือน ${TH_M[cal.cm-1]} ${cal.Y+543} (ทั้งเดือน)`} · เดือนที่แล้ว = ${TH_M[cal.pm-1]} · มุมมอง: ${UI.metric==='qty'?'QTY (จำนวนรายการ)':'Revenue (฿)'}${ROLE==='adm'?' · ซิงค์ข้อมูลอัตโนมัติทุก 30 วินาที':''}`;
   fillMonths(ml);
   $('#foot').textContent=`แหล่งข้อมูล: ${(D.meta&&D.meta.file)||'Refrash_UPSELL.xlsx'} (Raw, TARGET, TARGET STAFF, Shop list) · ยอดขาย = NET_RC ตามวันที่ INTRACN_DT_CMPLET · ใช้เฉพาะร้านที่อยู่ใน Shop list (${SH.length} ร้าน) ร้านที่ไม่อยู่ในรายการถูกตัดออก`;
 }
