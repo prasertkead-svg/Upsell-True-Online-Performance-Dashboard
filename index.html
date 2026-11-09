@@ -248,7 +248,7 @@ thead th{background:var(--surface2)}
 <button class="btn pri" id="aSave" disabled>บันทึกและเผยแพร่ข้อมูลใหม่</button>
 <p class="note">เมื่อบันทึก ผู้ใช้ทุกคนจะเห็นข้อมูลใหม่ทันที ไฟล์ Excel ถูกประมวลผลในเบราว์เซอร์ของคุณและเข้ารหัสก่อนบันทึก</p>
 </div></section>
-<section class="card c6"><div class="ch"><h2>Admin · Sale Kit (PowerPoint)</h2></div><div class="cb"><div class="fld"><label for="akit">เลือกไฟล์ PowerPoint (.pptx) ชื่อไฟล์อะไรก็ได้</label><input id="akit" type="file" accept=".pptx"></div><div class="stat" id="aKitStat" hidden></div><button class="btn pri" id="aKitSave" disabled>บันทึกและเผยแพร่ Sale Kit</button><p class="note">อัปโหลดไฟล์ใหม่ได้ทุกเมื่อ สไลด์ทั้งหมดในแท็บ Sale Kit จะถูกแทนที่ด้วยไฟล์ใหม่ (ไม่ขึ้นกับชื่อไฟล์) ข้อความ ตาราง กราฟและรูปถูกแปลงในเบราว์เซอร์ของคุณ</p></div></section>
+<section class="card c6"><div class="ch"><h2>Admin · Sale Kit (PowerPoint)</h2></div><div class="cb"><div class="fld"><label for="akit">เลือกไฟล์ PowerPoint (.pptx) ชื่อไฟล์อะไรก็ได้</label><input id="akit" type="file" accept=".pptx"></div><div class="fld" id="kTokW" hidden><label for="kTok">GitHub Token (ใส่ครั้งเดียว ระบบเก็บแบบเข้ารหัสไว้ให้)</label><input id="kTok" type="password" autocomplete="off" placeholder="github_pat_…"></div><div class="stat" id="aKitStat" hidden></div><button class="btn pri" id="aKitSave" disabled>บันทึกและเผยแพร่ Sale Kit</button><p class="note">อัปโหลดไฟล์ใหม่ได้ทุกเมื่อ สไลด์ทั้งหมดในแท็บ Sale Kit จะถูกแทนที่ด้วยไฟล์ใหม่ (ไม่ขึ้นกับชื่อไฟล์) ข้อความ ตาราง กราฟและรูปถูกแปลงในเบราว์เซอร์ของคุณ</p></div></section>
 <section class="card c6" id="aGh" hidden><div class="ch"><h2>Admin · เชื่อมต่อ GitHub (ตั้งค่าครั้งเดียว)</h2></div><div class="cb">
 <div class="fld"><label for="ghTok">GitHub Token (สิทธิ์ Contents: Read and write เฉพาะ repo นี้)</label><input id="ghTok" type="password" autocomplete="off" placeholder="github_pat_…"></div>
 <div class="fld"><label for="ghRepo">Repo (owner/ชื่อ)</label><input id="ghRepo" type="text" autocomplete="off"></div>
@@ -438,7 +438,8 @@ async function onFile(e){
 }
 const GH_KEY='uwp_gh_v1',GH_DEF='prasertkead-svg/Upsell-True-Online-Performance-Dashboard';
 let PENDIV='',PENDUNTIL=0;
-function autoUp(btn){if(typeof claude!=='undefined'||ghCfg().token){setTimeout(()=>{if(!btn.disabled)btn.click()},50);return true}const g=$('#aGh');if(g){g.hidden=false;g.scrollIntoView({behavior:'smooth',block:'center'});setStat($('#ghStat'),'วาง GitHub Token ที่นี่ครั้งเดียว แล้วกดบันทึก ระบบจะอัปโหลดไฟล์ที่เลือกขึ้น GitHub ให้ทันที','');}return false}
+function adoptTok(){const el=$('#kTok');const t=el&&el.value.trim();if(t&&!ghCfg().token){const c=ghCfg();store.set(GH_KEY,JSON.stringify({token:t,repo:c.repo||GH_DEF,branch:c.branch||'main'}))}}
+function autoUp(btn){adoptTok();if(typeof claude!=='undefined'||ghCfg().token){setTimeout(()=>{if(!btn.disabled)btn.click()},50);return true}const g=$('#aGh');if(g){g.hidden=false;setStat($('#ghStat'),'วาง GitHub Token ครั้งเดียว แล้วกดบันทึก ระบบจะอัปโหลดไฟล์ที่เลือกขึ้น GitHub ให้ทันที','')}const w=$('#kTokW');if(w&&btn.id==='aKitSave'){w.hidden=false;setStat($('#aKitStat'),'อ่านไฟล์สำเร็จ วาง GitHub Token ในช่องด้านบน (ครั้งเดียว) ระบบจะบันทึกและแสดงผลทันที','ok');$('#kTok').focus()}return false}
 function ghCfg(){try{return JSON.parse(store.get(GH_KEY)||'null')||{}}catch(e){return{}}}
 async function ghPush(P,retry){
   const c=ghCfg();const repo=(c.repo||GH_DEF).trim(),br=(c.branch||'main').trim(),path='data.json';
@@ -505,7 +506,8 @@ function bindAdmin(){
       setStat(st,`อ่านไฟล์สำเร็จ ${NEWK.slides.length} สไลด์ (ขนาดข้อมูล ${(JSON.stringify(NEWK).length/1048576).toFixed(1)} MB) กดบันทึกเพื่อเผยแพร่`,'ok');$('#aKitSave').disabled=false;autoUp($('#aKitSave'));
     }catch(x){NEWK=null;setStat(st,'อ่านไฟล์ไม่สำเร็จ: '+(x.message||x),'err')}
   };
-  $('#aKitSave').onclick=async()=>{if(!NEWK)return;$('#aKitSave').disabled=true;await publishData({...D,kit:NEWK},ADM.pubPw,ADM.pw,$('#aKitStat'),'บันทึก Sale Kit เรียบร้อย ผู้ใช้ทุกคนจะเห็นสไลด์ใหม่');NEWK=null;$('#akit').value=''};
+  $('#aKitSave').onclick=async()=>{if(!NEWK)return;adoptTok();$('#aKitSave').disabled=true;await publishData({...D,kit:NEWK},ADM.pubPw,ADM.pw,$('#aKitStat'),'บันทึก Sale Kit เรียบร้อย ผู้ใช้ทุกคนจะเห็นสไลด์ใหม่');if(!/ไม่สำเร็จ|ไม่ได้|ปฏิเสธ|ไม่พบ/.test($('#aKitStat').textContent)){NEWK=null;$('#akit').value='';try{showTab('kit')}catch(e){}}else $('#aKitSave').disabled=false};
+  $('#kTok').addEventListener('change',()=>{if(NEWK&&$('#kTok').value.trim())$('#aKitSave').click()});
   $('#aSave').onclick=async()=>{if(!NEWD)return;$('#aSave').disabled=true;await publishData(D.kit?{...NEWD,kit:D.kit}:NEWD,$('#aPub').value.trim()||ADM.pubPw,$('#aAdm').value.trim()||ADM.pw,$('#aStat'),'บันทึกข้อมูลใหม่เรียบร้อย ผู้ใช้ทุกคนจะเห็นข้อมูลล่าสุด');NEWD=null;$('#aPrev').innerHTML='';$('#axl').value=''};
   $('#aPw').onclick=async()=>{
     const pp=$('#aPub').value.trim(),ap=$('#aAdm').value.trim(),st=$('#aPwStat');
