@@ -248,6 +248,11 @@ thead th{background:var(--surface2)}
 <section class="card "><div class="ch"><h2>Insight วิเคราะห์ และข้อเสนอแนะ<span class=sub>สร้างอัตโนมัติจากข้อมูลตามตัวกรองที่เลือก</span></h2><button class=tg aria-label=ย่อ/ขยาย>▾</button></div><div class="cb"><div id="execSum"></div><h3 style="margin:22px 0 8px;font-size:14px">ข้อสังเกตเชิงลึกรายหัวข้อ</h3><div class="ins" id="insights"></div><h3 style="margin:16px 0 8px;font-size:14px">ข้อเสนอแนะ</h3><ol class="rec" id="recs"></ol></div></section>
 </div>
 <div class="grid tabp" id="p-admin" hidden>
+<section class="card c12" id="aSms"><div class="ch"><h2>Admin · สรุปสำหรับส่ง SMS<span class="sub">สร้างอัตโนมัติจากข้อมูลล่าสุด แก้ไขข้อความได้ก่อนคัดลอก</span></h2></div><div class="cb">
+<textarea id="smsTxt" rows="18" spellcheck="false" aria-label="ข้อความ SMS" style="width:100%;font:13px/1.6 ui-monospace,Menlo,Consolas,monospace;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface2);color:var(--ink);resize:vertical"></textarea>
+<div class="stat" id="smsInfo"></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn pri" id="smsCopy" type="button">คัดลอกข้อความ</button><button class="btn" id="smsGen" type="button">สร้างใหม่จากข้อมูลล่าสุด</button></div>
+<p class="note">%Ach = ยอดขายสะสม (฿) ÷ เป้าหมายเดือน · เรียงอันดับเฉพาะ Area ที่มีเป้าหมาย · Staff No Sale = พนักงานที่มีเป้าแต่ยังไม่มียอดเดือนนี้ · แคมเปญเรียงตามจำนวนขาย (Qty) · ตัวเลขไม่ขึ้นกับตัวกรองหรือมุมมอง Revenue/QTY</p></div></section>
 <section class="card c6"><div class="ch"><h2>Admin · อัปเดตข้อมูล</h2></div><div class="cb">
 <div class="stat" id="aInfo"></div>
 <div class="fld"><label for="axl">เลือกไฟล์ Excel ใหม่ (รูปแบบเดียวกับ Refrash_UPSELL.xlsx: ชีต Raw, TARGET, TARGET STAFF, Shop list)</label><input id="axl" type="file" accept=".xlsx,.xlsm"></div>
@@ -415,6 +420,7 @@ function summarize(d){
 }
 let NEWD=null;
 function renderAdmin(){
+  if(typeof genSms==='function'&&$('#smsTxt')&&!$('#smsTxt').dataset.edit){genSms()}
   const m=D.meta||{};
   $('#aInfo').innerHTML=`ข้อมูลปัจจุบัน: ณ <b>${esc(D.asof)}</b> · ${SH.length} ร้าน · ${ST.length} พนักงาน · ${f0(D.sales.length)} รายการขาย<br>อัปเดตล่าสุด: ${m.updated?esc(new Date(m.updated).toLocaleString('th-TH')):'–'} ${m.file?'· ไฟล์ '+esc(m.file):''}`;
   if(!$('#aPub').value)$('#aPub').value=ADM.pubPw||'';
@@ -1781,4 +1787,32 @@ function exportAll(){
   }
   let q=false;new MutationObserver(()=>{if(!q){q=true;setTimeout(()=>{q=false;run()},40)}}).observe(document.documentElement,{childList:true,subtree:true});run();
 })();
+
+/* ---------- SMS summary (Admin) ---------- */
+function buildSms(){
+  const pc=(a,t)=>t>0?(a/t*100).toFixed(1)+'%':'–';
+  const grp=key=>{const m=new Map();SH.forEach(s=>{const k=s[key]||'(ไม่ระบุ)';if(!m.has(k))m.set(k,{name:k,rv:0,tg:0});const o=m.get(k),r=shopRec[s.i];o.rv+=r.rv;o.tg+=r.tg0});return[...m.values()].map(o=>({...o,ach:o.tg>0?o.rv/o.tg:NaN}))};
+  const rg=grp('rg').filter(x=>x.tg>0).sort((a,b)=>String(a.name).localeCompare(String(b.name),'th'));
+  const ar=grp('ar').filter(x=>x.tg>0&&isFinite(x.ach));
+  const top=[...ar].sort((a,b)=>b.ach-a.ach).slice(0,3),bot=[...ar].sort((a,b)=>a.ach-b.ach).slice(0,3);
+  const tot=SH.reduce((a,s)=>({rv:a.rv+shopRec[s.i].rv,tg:a.tg+shopRec[s.i].tg0}),{rv:0,tg:0});
+  const ns=new Map();ST.forEach(t=>{const a=SH[t.sh].ar||'(ไม่ระบุ)';if(!ns.has(a))ns.set(a,{name:a,ns:0,head:0});const o=ns.get(a);if(t.tg0>0){o.head++;if(staffRec[t.i].qty===0)o.ns++}});
+  const nsL=[...ns.values()].filter(x=>x.ns>0).sort((a,b)=>b.ns-a.ns||b.ns/b.head-a.ns/a.head).slice(0,5);
+  const cm=new Map(),camps=D.camps||[];
+  for(const x of D.sales){if(x.length<7||x[0]!==cal.cm)continue;const k=x[6];let o=cm.get(k);if(!o){o={name:camps[k]||'(ไม่ระบุ)',q:0};cm.set(k,o)}o.q++}
+  const cL=[...cm.values()].sort((a,b)=>b.q-a.q).slice(0,3);
+  const L=['Upsell True Online',`DATE: ${cal.E} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][cal.cm-1]} ${cal.Y}${cal.cm===cal.lm?'':' (full month)'}`,'','%Ach by Region'];
+  rg.forEach(x=>L.push(`${x.name} ${pc(x.rv,x.tg)}`));L.push(`Total ${pc(tot.rv,tot.tg)}`);
+  L.push('','TOP 3 Area');top.forEach((x,i)=>L.push(`${i+1}. ${x.name} ${pc(x.rv,x.tg)}`));
+  L.push('','Bottom 3 Area');bot.forEach((x,i)=>L.push(`${i+1}. ${x.name} ${pc(x.rv,x.tg)}`));
+  L.push('','Bottom 5 Area (Most No-Sale Staff)');nsL.forEach((x,i)=>L.push(`${i+1}. ${x.name} ${x.ns} staff (${pc(x.ns,x.head)})`));
+  L.push('','TOP 3 Campaign');cL.forEach((x,i)=>L.push(`${i+1}. ${x.name} ${f0(x.q)}`));
+  return L.join('\n');
+}
+function smsInfo(){const t=$('#smsTxt').value;const n=[...t].length,th=/[^\x00-\x7f]/.test(t),per=th?70:160,mp=th?67:153;const seg=n<=per?1:Math.ceil(n/mp);setStat($('#smsInfo'),`${n} ตัวอักษร · ประมาณ ${seg} ข้อความ SMS (${th?'มีภาษาไทย จึงนับ 70 ตัวอักษร/ข้อความ':'ภาษาอังกฤษ 160 ตัวอักษร/ข้อความ'})`,'')}
+function genSms(){delete $('#smsTxt').dataset.edit;try{$('#smsTxt').value=buildSms()}catch(e){$('#smsTxt').value='สร้างข้อความไม่สำเร็จ: '+(e.message||e)}smsInfo()}
+(function(){const wire=()=>{const c=$('#smsCopy');if(!c||c.dataset.w)return;c.dataset.w=1;
+  $('#smsGen').onclick=genSms;$('#smsTxt').addEventListener('input',()=>{$('#smsTxt').dataset.edit=1;smsInfo()});
+  c.onclick=async()=>{const t=$('#smsTxt').value;try{await navigator.clipboard.writeText(t)}catch(e){$('#smsTxt').select();try{document.execCommand('copy')}catch(x){}}flash('คัดลอกข้อความแล้ว')}};
+  window.addEventListener('DOMContentLoaded',wire);wire()})();
 </script>
