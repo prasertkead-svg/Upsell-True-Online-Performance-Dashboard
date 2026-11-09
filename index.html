@@ -91,6 +91,9 @@ td.nm{max-width:260px;overflow:hidden;text-overflow:ellipsis}
 .dot.good{background:var(--good)}.dot.warn{background:var(--warn)}.dot.crit{background:var(--crit)}
 .bar{display:inline-block;height:6px;border-radius:3px;background:var(--s1);vertical-align:middle;margin-left:6px;min-width:1px}
 /* insights */
+.xhead{border:1px solid var(--line);border-left:4px solid var(--info,#6366f1);border-radius:10px;padding:12px 14px;background:var(--surface2);margin-bottom:12px}.xhead.good{border-left-color:var(--good)}.xhead.warn{border-left-color:var(--warn)}.xhead.crit{border-left-color:var(--crit)}.xhead p{margin:8px 0 0;font-size:14px;line-height:1.7;color:var(--ink)}
+.xkpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(170px,100%),1fr));gap:10px;margin-bottom:6px}.xk{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface)}.xk span{display:block;font-size:12px;color:var(--ink2)}.xk b{display:block;font-size:20px;margin:2px 0}.xk i{font-style:normal;font-size:12px;color:var(--ink2)}.xk.good b{color:var(--good)}.xk.warn b{color:var(--warn)}.xk.crit b{color:var(--crit)}
+.xh{margin:22px 0 6px;font-size:14px}.xn{margin:0 0 8px;font-size:13px;color:var(--ink2)}.xl{margin:0;padding-left:20px;display:grid;gap:8px;font-size:13px;color:var(--ink2)}.xl b{color:var(--ink)}
 .ins{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));gap:10px}
 .in{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface2);min-width:0}
 .in h3{margin:0 0 4px;font-size:13px;font-weight:600;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -239,7 +242,7 @@ thead th{background:var(--surface2)}
 </div>
 <div class="grid tabp" id="p-kit" hidden><section class="card"><div class="ch"><h2>Sale Kit<span class="sub" id="kitSub"></span></h2></div><div class="cb"><div id="kitNav"></div><div id="kitBody"></div></div></section></div>
 <div class="grid tabp" id="p-insight" hidden>
-<section class="card "><div class="ch"><h2>Insight วิเคราะห์ และข้อเสนอแนะ<span class=sub>สร้างอัตโนมัติจากข้อมูลตามตัวกรองที่เลือก</span></h2><button class=tg aria-label=ย่อ/ขยาย>▾</button></div><div class="cb"><div class="ins" id="insights"></div><h3 style="margin:16px 0 8px;font-size:14px">ข้อเสนอแนะ</h3><ol class="rec" id="recs"></ol></div></section>
+<section class="card "><div class="ch"><h2>Insight วิเคราะห์ และข้อเสนอแนะ<span class=sub>สร้างอัตโนมัติจากข้อมูลตามตัวกรองที่เลือก</span></h2><button class=tg aria-label=ย่อ/ขยาย>▾</button></div><div class="cb"><div id="execSum"></div><h3 style="margin:22px 0 8px;font-size:14px">ข้อสังเกตเชิงลึกรายหัวข้อ</h3><div class="ins" id="insights"></div><h3 style="margin:16px 0 8px;font-size:14px">ข้อเสนอแนะ</h3><ol class="rec" id="recs"></ol></div></section>
 </div>
 <div class="grid tabp" id="p-admin" hidden>
 <section class="card c6"><div class="ch"><h2>Admin · อัปเดตข้อมูล</h2></div><div class="cb">
@@ -822,6 +825,88 @@ function renderKPIs(){
 }
 
 /* ---------- insights ---------- */
+/* ---------- executive analysis ---------- */
+function buildExec(){
+  const box=$('#execSum');if(!box)return[];
+  const r=scope.rec,E=cal.E,N=cal.N,rem=N-E,rr=scope.rr,C=CUR(),hasT=r.tg>0;
+  const ach=ratio(r.act,r.tg),rrach=ratio(rr,r.tg),now=E?r.act/E:0,need=rem>0?(r.tg-r.act)/rem:0,gapRR=r.tg-rr;
+  const mom=growth(r.act,r.pAct),dMom=r.act-r.pAct;
+  const mon=TH_M[cal.cm-1],pmon=TH_M[cal.pm-1];
+  const sh=scope.shopRows;
+  const G=(rows,key)=>{const m=new Map();rows.forEach(s=>{const k=s[key]||'(ไม่ระบุ)';if(!m.has(k))m.set(k,{name:k,n:0,tg:0,act:0,rr:0,pAct:0});const o=m.get(k);o.n++;o.tg+=s.tg||0;o.act+=s.act;o.rr+=s.rr||0;o.pAct+=s.pAct||0});
+    return[...m.values()].map(o=>({...o,rrach:ratio(o.rr,o.tg),gap:o.tg-o.rr,mom:growth(o.act,o.pAct),d:o.act-o.pAct}))};
+  const ar=G(sh,'ar'),rg=G(sh,'rg'),ty=G(sh,'ty');
+  const out=[];const X=(c,t,b)=>out.push({c,t,b});
+  const cls=hasT?(rrach>=1?'good':rrach>=.9?'warn':'crit'):'info';
+  const verdict=hasT?(rrach>=1?'มีแนวโน้มบรรลุเป้า':rrach>=.9?'ใกล้เป้า แต่ต้องเร่ง':rrach>=.75?'เสี่ยงไม่ถึงเป้า':'เสี่ยงสูงที่จะไม่ถึงเป้า'):'ภาพรวมยอดขาย';
+  // ---- headline
+  let head=`ข้อมูล ณ ${cal.E} ${mon} (วันที่ ${E} จาก ${N} วัน = ${fp(E/N,0)} ของเดือน) ยอดขายสะสม ${C}${f0(r.act)}`;
+  if(hasT)head+=` คิดเป็น ${fp(ach)} ของเป้า ${C}${f0(r.tg)} · Runrate คาดปิดที่ ${C}${f0(rr)} (${fp(rrach)}) ${gapRR>0?`ขาดเป้าประมาณ ${C}${f0(gapRR)}`:`เกินเป้าประมาณ ${C}${f0(-gapRR)}`}`;
+  if(isFinite(mom))head+=` · เทียบ ${pmon} ช่วงเดียวกัน ${mom>=0?'เพิ่มขึ้น':'ลดลง'} ${fp(Math.abs(mom))} (${dMom>=0?'+':'−'}${C}${f0(Math.abs(dMom))})`;
+  X(cls,'สรุปผู้บริหาร: '+verdict,head);
+  // ---- KPI strip
+  const kp=[];const K=(l,v,s,c)=>kp.push(`<div class="xk ${c||''}"><span>${l}</span><b>${v}</b><i>${s||''}</i></div>`);
+  K('ยอดสะสม',C+f0(r.act),`${fp(E/N,0)} ของเวลาผ่านไป`);
+  if(hasT){K('% Achievement',fp(ach),`เป้า ${C}${f0(r.tg)}`,stClass('ach',ach));K('Runrate (%)',fp(rrach),`คาดปิด ${C}${f0(rr)}`,stClass('rr',rrach));
+    K(gapRR>0?'คาดว่าขาดเป้า':'คาดว่าเกินเป้า',C+f0(Math.abs(gapRR)),gapRR>0?'ที่จังหวะปัจจุบัน':'ที่จังหวะปัจจุบัน',gapRR>0?'crit':'good');
+    if(rem>0)K('ต้องขาย/วัน (ที่เหลือ)',C+f0(need),`ปัจจุบัน ${C}${f0(now)}/วัน (×${isFinite(need/now)?(need/now).toFixed(2):'–'})`,need/now>1.5?'crit':need/now>1.1?'warn':'good')}
+  if(isFinite(mom))K('MOM (MTD)',fg(mom),`${dMom>=0?'+':'−'}${C}${f0(Math.abs(dMom))}`,mom>=.05?'good':mom<=-.05?'crit':'warn');
+  let html=`<div class="xhead ${cls}"><span class="pill ${cls}">${esc(verdict)}</span><p>${esc(head)}</p></div><div class="xkpi">${kp.join('')}</div>`;
+  // ---- table builder
+  const T=(title,note,rows,cols)=>`<h4 class="xh">${title}</h4>${note?`<p class="xn">${note}</p>`:''}<div class="sc open"><table><thead><tr>${cols.map(c=>`<th class="${c.n?'n':''}">${c.l}</th>`).join('')}</tr></thead><tbody>${rows.map(x=>`<tr>${cols.map(c=>`<td class="${c.n?'n':''}">${c.f(x)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  const pc=v=>isFinite(v)?`<span class="pill ${v>=1?'good':v>=.8?'warn':'crit'}">${fp(v)}</span>`:'–';
+  const gc=v=>isFinite(v)?`<span style="color:var(--${v>=0?'good':'crit'})">${fg(v)}</span>`:'–';
+  const sg=v=>(v>=0?'+':'−')+C+f0(Math.abs(v));
+  // ---- where is the gap (areas)
+  if(hasT&&ar.length>1){
+    const tot=ar.reduce((a,x)=>a+Math.max(0,x.gap),0)||1;
+    const rows=[...ar].sort((a,b)=>b.gap-a.gap);
+    const top=rows.filter(x=>x.gap>0).slice(0,3),sum3=top.reduce((a,x)=>a+x.gap,0);
+    html+=T('1. ช่องว่างเป้าหมายอยู่ที่ไหน (ตาม Area)',top.length?`3 Area ที่ขาดมากสุด (${top.map(x=>esc(x.name)).join(', ')}) รวมขาด ${C}${f0(sum3)} หรือ ${fp(sum3/tot,0)} ของส่วนที่ขาดทั้งหมด ควรโฟกัสก่อน`:'ทุก Area มี Runrate ถึงเป้า',rows.slice(0,10),
+      [{l:'Area',f:x=>esc(x.name)},{l:'ร้าน',n:1,f:x=>f0(x.n)},{l:'เป้า',n:1,f:x=>f0(x.tg)},{l:'ยอดสะสม',n:1,f:x=>f0(x.act)},{l:'Runrate',n:1,f:x=>f0(x.rr)},{l:'RR %',n:1,f:x=>pc(x.rrach)},{l:'ขาด/เกิน (RR)',n:1,f:x=>sg(-x.gap)},{l:'สัดส่วนของส่วนที่ขาด',n:1,f:x=>x.gap>0?fp(x.gap/tot,0):'–'},{l:'MOM',n:1,f:x=>gc(x.mom)}]);
+  }
+  // ---- region + shop type
+  if(hasT&&rg.length>1)html+=T('2. เปรียบเทียบตาม Region',null,[...rg].sort((a,b)=>b.gap-a.gap),[{l:'Region',f:x=>esc(x.name)},{l:'ร้าน',n:1,f:x=>f0(x.n)},{l:'เป้า',n:1,f:x=>f0(x.tg)},{l:'ยอดสะสม',n:1,f:x=>f0(x.act)},{l:'RR %',n:1,f:x=>pc(x.rrach)},{l:'ขาด/เกิน (RR)',n:1,f:x=>sg(-x.gap)},{l:'MOM',n:1,f:x=>gc(x.mom)}]);
+  if(hasT&&ty.length>1){const best=[...ty].filter(x=>isFinite(x.rrach)&&x.tg>=.05*r.tg).sort((a,b)=>b.rrach-a.rrach);
+    html+=T('3. เปรียบเทียบตามประเภทร้าน (Shop Type)',best.length>1?`${esc(best[0].name)} ทำ RR ได้ดีที่สุด (${fp(best[0].rrach)}) · ${esc(best[best.length-1].name)} ต่ำสุด (${fp(best[best.length-1].rrach)}) ส่วนต่าง ${((best[0].rrach-best[best.length-1].rrach)*100).toFixed(1)} จุด`:'',[...ty].sort((a,b)=>b.gap-a.gap),[{l:'Shop Type',f:x=>esc(x.name)},{l:'ร้าน',n:1,f:x=>f0(x.n)},{l:'เป้า',n:1,f:x=>f0(x.tg)},{l:'ยอดสะสม',n:1,f:x=>f0(x.act)},{l:'ยอด/ร้าน',n:1,f:x=>f0(x.act/Math.max(1,x.n))},{l:'RR %',n:1,f:x=>pc(x.rrach)},{l:'ขาด/เกิน (RR)',n:1,f:x=>sg(-x.gap)}])}
+  // ---- category drivers
+  const cr=catRows().filter(c=>c.act>0||c.pAct>0);
+  if(cr.length){const dt=cr.reduce((a,c)=>a+(c.act-c.pAct),0);const up=[...cr].sort((a,b)=>(b.act-b.pAct)-(a.act-a.pAct));
+    html+=T('4. ปัจจัยขับเคลื่อนยอดขายตามหมวด (เทียบ '+pmon+' ช่วงเดียวกัน)',`ยอดรวมเปลี่ยน ${sg(dt)} · หมวดที่ดึงขึ้นมากสุด ${esc(up[0].name)} (${sg(up[0].act-up[0].pAct)})${up.length>1&&up[up.length-1].act<up[up.length-1].pAct?` · หมวดที่ฉุดมากสุด ${esc(up[up.length-1].name)} (${sg(up[up.length-1].act-up[up.length-1].pAct)})`:''}`,up,
+      [{l:'หมวด',f:x=>esc(x.name)},{l:'ยอดสะสม',n:1,f:x=>f0(x.act)},{l:'สัดส่วน',n:1,f:x=>fp(x.share)},{l:UI.metric==='qty'?'เดือนก่อน (MTD)':'เดือนก่อน (MTD)',n:1,f:x=>f0(x.pAct)},{l:'เปลี่ยนแปลง',n:1,f:x=>`<span style="color:var(--${x.act-x.pAct>=0?'good':'crit'})">${sg(x.act-x.pAct)}</span>`},{l:'MOM',n:1,f:x=>gc(x.mom)},{l:'ราคาเฉลี่ย/รายการ',n:1,f:x=>isFinite(x.avg)?f0(x.avg):'–'}]);}
+  // ---- concentration & risk
+  const so=[...sh].sort((a,b)=>b.act-a.act);let cum=0,n80=0;for(const s of so){cum+=s.act;n80++;if(cum>=.8*r.act)break}
+  const zero=sh.filter(s=>s.act===0),zt=zero.filter(s=>s.tg>0),ztTg=zt.reduce((a,s)=>a+s.tg,0);
+  const lowS=hasT?sh.filter(s=>s.tg>0&&s.act>0&&s.rrach<.5):[];const lowGap=lowS.reduce((a,s)=>a+(s.tg-s.rr),0);
+  const sf=scope.staffRows.filter(s=>s.tg0>0||s.act>0),sell=sf.filter(s=>s.act>0),avgS=sell.length?sell.reduce((a,s)=>a+s.act,0)/sell.length:0;
+  const noS=sf.filter(s=>s.act===0&&s.tg0>0),below=sell.filter(s=>s.act<avgS*.8),catchS=below.reduce((a,s)=>a+(avgS-s.act),0);
+  const lost=noS.filter(s=>s.pFull>0);
+  const rk=[];
+  rk.push(`<li><b>การกระจุกตัว:</b> ${f0(n80)} ร้าน (${fp(n80/Math.max(1,sh.length),0)} ของร้านทั้งหมด) สร้างยอดถึง 80% ของยอดรวม ${n80/Math.max(1,sh.length)<.25?'ฐานยอดขายพึ่งร้านจำนวนน้อย ควรดูแลร้านกลุ่มนี้เป็นพิเศษและขยายผลไปร้านอื่น':'การกระจายค่อนข้างดี'}</li>`);
+  if(zero.length)rk.push(`<li><b>ร้านยังไม่มียอด ${f0(zero.length)} ร้าน (${fp(zero.length/Math.max(1,sh.length),0)}):</b>${zt.length?` ${f0(zt.length)} ร้านมีเป้ารวม ${C}${f0(ztTg)}${hasT?` (${fp(ztTg/r.tg,0)} ของเป้าทั้งหมด)`:''} ถ้าร้านเหล่านี้ขายได้ตามระดับ Runrate เฉลี่ยของพื้นที่ (${fp(rrach,0)}) จะเพิ่มยอดได้ราว ${C}${f0(ztTg*(isFinite(rrach)?rrach:0))}`:''}</li>`);
+  if(lowS.length)rk.push(`<li><b>ร้าน Runrate ต่ำกว่า 50% ของเป้า ${f0(lowS.length)} ร้าน:</b> รวมคาดว่าขาด ${C}${f0(lowGap)} ซึ่งเป็น ${fp(lowGap/Math.max(1,gapRR>0?gapRR:lowGap),0)} ${gapRR>0?'ของส่วนที่คาดว่าจะขาดทั้งหมด':'ของส่วนที่ขาดของร้านกลุ่มนี้'}</li>`);
+  if(sf.length)rk.push(`<li><b>พนักงาน:</b> ไม่มียอด ${f0(noS.length)} คน (${fp(ratio(noS.length,sf.filter(s=>s.tg0>0).length),0)} ของพนักงานที่มีเป้า)${lost.length?` โดย ${f0(lost.length)} คนเคยขายเดือนก่อน`:''} · พนักงานต่ำกว่า 80% ของค่าเฉลี่ย ${f0(below.length)} คน ถ้ายกระดับให้ถึงค่าเฉลี่ย (${C}${f0(avgS)}) จะเพิ่มยอดสะสมได้ราว ${C}${f0(catchS)}</li>`);
+  html+=`<h4 class="xh">5. ความเสี่ยงและโอกาส (ประเมินเป็นมูลค่า)</h4><ul class="xl">${rk.join('')}</ul>`;
+  // ---- scenarios
+  if(hasT&&rem>0){
+    const sc=[[0,'จังหวะปัจจุบัน'],[.05,'เร่งขึ้น 5%'],[.10,'เร่งขึ้น 10%'],[.20,'เร่งขึ้น 20%']].map(([u,l])=>{const p=r.act+(rr-r.act)*(1+u);return{l,p,pc:p/r.tg,g:p-r.tg}});
+    html+=T('6. สถานการณ์คาดการณ์สิ้นเดือน','ประเมินจากยอดที่เหลืออีก '+rem+' วัน หากจังหวะการขายเปลี่ยนไปตามที่ระบุ',sc,[{l:'สถานการณ์',f:x=>x.l},{l:'คาดปิด',n:1,f:x=>f0(x.p)},{l:'% ของเป้า',n:1,f:x=>pc(x.pc)},{l:'ขาด/เกิน',n:1,f:x=>sg(x.g)}]);
+  }
+  // ---- action plan
+  const AP=[];const topA=hasT?[...ar].filter(x=>x.gap>0).sort((a,b)=>b.gap-a.gap).slice(0,2):[];
+  if(hasT&&gapRR>0&&rem>0)AP.push(['สูง','ตั้งเป้ารายวัน/รายร้าน และติดตามยอดทุกเช้า ให้ถึง '+C+f0(need)+'/วัน','Area Manager','ทันที','ส่วนที่คาดว่าขาด '+C+f0(gapRR)]);
+  if(topA.length)AP.push(['สูง','ลงพื้นที่ '+topA.map(x=>x.name).join(' และ ')+' ถอดบทเรียนจาก Area ที่ทำได้ดี','Regional Head / AM','ภายใน 3 วัน','ส่วนที่ขาด '+C+f0(topA.reduce((a,x)=>a+x.gap,0))]);
+  if(zt.length)AP.push(['สูง',`ปลุก ${f0(zt.length)} ร้านที่ยังไม่มียอด เริ่มจากร้านเป้าสูงสุด`,'AM / FC','ภายใน 2–3 วัน','โอกาส ~'+C+f0(ztTg*(isFinite(rrach)?rrach:0))]);
+  if(lowS.length)AP.push(['กลาง',`ตรวจสาเหตุร้าน Runrate ต่ำ ${f0(lowS.length)} ร้าน (สต็อก โปรโมชัน กำลังคน)`,'FC / ร้านค้า','ภายใน 1 สัปดาห์','ส่วนที่ขาด '+C+f0(lowGap)]);
+  if(noS.length)AP.push(['กลาง',`Coaching พนักงานไม่มียอด ${f0(noS.length)} คน${lost.length?` เริ่มจาก ${f0(lost.length)} คนที่เคยขาย`:''}`,'หัวหน้าร้าน / Trainer','ภายใน 1 สัปดาห์','–']);
+  if(below.length)AP.push(['กลาง',`ยกระดับพนักงานต่ำกว่า 80% ของค่าเฉลี่ย ${f0(below.length)} คน ด้วย Sale Kit และการจับคู่พี่เลี้ยง`,'Trainer','2 สัปดาห์','โอกาส ~'+C+f0(catchS)]);
+  const wk=[...cr].filter(c=>isFinite(c.mom)&&c.act<c.pAct).sort((a,b)=>(a.act-a.pAct)-(b.act-b.pAct))[0];
+  if(wk)AP.push(['กลาง',`กระตุ้นหมวด ${wk.name} ที่ยอดลดลง ตรวจโปรโมชัน/แพ็กเกจและการนำเสนอหน้าร้าน`,'Product / Marketing','ภายใน 1 สัปดาห์','ยอดที่หายไป '+C+f0(wk.pAct-wk.act)]);
+  if(AP.length)html+=T('7. แผนปฏิบัติการที่แนะนำ (เรียงตามความเร่งด่วน)','“ส่วนที่ขาด” คือช่องว่างที่ต้องปิด ส่วน “โอกาส” คือมูลค่าที่ดึงกลับได้โดยประมาณ ใช้เพื่อจัดลำดับความสำคัญ ไม่ใช่ตัวเลขที่รับประกัน',AP.map(a=>({p:a[0],a:a[1],o:a[2],t:a[3],i:a[4]})),[{l:'ลำดับ',f:x=>`<span class="pill ${x.p==='สูง'?'crit':'warn'}">${x.p}</span>`},{l:'การดำเนินการ',f:x=>esc(x.a)},{l:'ผู้รับผิดชอบ',f:x=>esc(x.o)},{l:'กรอบเวลา',f:x=>esc(x.t)},{l:'ผลกระทบโดยประมาณ',n:1,f:x=>esc(x.i)}]);
+  box.innerHTML=html;
+  out.push(...rk.map(x=>({c:'info',t:'ความเสี่ยง/โอกาส',b:x.replace(/<[^>]+>/g,'')})),...AP.map(a=>({c:a[0]==='สูง'?'crit':'warn',t:'Action: '+a[1],b:`ผู้รับผิดชอบ ${a[2]} · ${a[3]} · ผลกระทบ ${a[4]}`})));
+  return out;
+}
 function buildInsights(){
   const r=scope.rec,rr=scope.rr,E=cal.E,N=cal.N,rem=N-E,I=[],R=[];
   const ach=ratio(r.act,r.tg),rrach=ratio(rr,r.tg),pace=E/N,now=r.act/E,need=rem>0?(r.tg-r.act)/rem:0;
@@ -869,7 +954,8 @@ function buildInsights(){
   R.push(`<b>ตรวจคุณภาพข้อมูล:</b> ยอดขายที่ไม่ผูกกับพนักงานในรายชื่อ ${fp(ratio(r.act-sTot,r.act),0)} ควรเพิ่มรหัสพนักงานให้ครบเพื่อให้ Leaderboard ถูกต้อง`);
   $('#insights').innerHTML=I.map(x=>`<div class="in"><h3><span class="pill ${x.c}">${lv(x.c)}</span>${esc(x.t)}</h3><p>${esc(x.b)}</p></div>`).join('');
   $('#recs').innerHTML=R.map(x=>`<li>${x}</li>`).join('');
-  scope.ins=I;scope.recs=R.map(x=>x.replace(/<[^>]+>/g,''));
+  let XI=[];try{XI=buildExec()}catch(err){console.error(err)}
+  scope.ins=[...XI.slice(0,1),...I,...XI.slice(1)];scope.recs=R.map(x=>x.replace(/<[^>]+>/g,''));
 }
 
 /* ---------- charts ---------- */
