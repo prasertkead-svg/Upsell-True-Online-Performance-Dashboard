@@ -252,7 +252,7 @@ thead th{background:var(--surface2)}
 <textarea id="smsTxt" rows="18" spellcheck="false" aria-label="ข้อความ SMS" style="width:100%;font:13px/1.6 ui-monospace,Menlo,Consolas,monospace;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface2);color:var(--ink);resize:vertical"></textarea>
 <div class="stat" id="smsInfo"></div>
 <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn pri" id="smsCopy" type="button">คัดลอกข้อความ</button><button class="btn" id="smsGen" type="button">สร้างใหม่จากข้อมูลล่าสุด</button></div>
-<p class="note">%RR Ach = Runrate คาดปิดสิ้นเดือน (฿) ÷ เป้าหมายเดือน · เรียงอันดับเฉพาะ Area ที่มีเป้าหมาย · Staff No Sale = พนักงานที่มีเป้าแต่ยังไม่มียอดเดือนนี้ · ตัวย่อ Area: N=North, S=South, E=East, W=West, C=Central, U=Upper, L=Lower (เช่น BMA1 NW = BMA I - North West, UPC LNE = UPC - Lower Northeast) · แคมเปญเรียงตามจำนวนขาย (Qty) · ตัวเลขไม่ขึ้นกับตัวกรองหรือมุมมอง Revenue/QTY</p></div></section>
+<p class="note">%RR Ach = Runrate คาดปิดสิ้นเดือน (฿) ÷ เป้าหมายเดือน · เรียงอันดับเฉพาะ Area ที่มีเป้าหมาย · Staff No Sale = พนักงานประเภท Retention (Ret_*) และ Multi (RR_Multi) ที่มีเป้าแต่ยังไม่มียอดเดือนนี้ ตัวเลข % = สัดส่วนต่อพนักงานกลุ่มนี้ใน Area · ตัวย่อ Area: N=North, S=South, E=East, W=West, C=Central, U=Upper, L=Lower (เช่น BMA1 NW = BMA I - North West, UPC LNE = UPC - Lower Northeast) · แคมเปญเรียงตามจำนวนขาย (Qty) · ตัวเลขไม่ขึ้นกับตัวกรองหรือมุมมอง Revenue/QTY</p></div></section>
 <section class="card c6"><div class="ch"><h2>Admin · อัปเดตข้อมูล</h2></div><div class="cb">
 <div class="stat" id="aInfo"></div>
 <div class="fld"><label for="axl">เลือกไฟล์ Excel ใหม่ (รูปแบบเดียวกับ Refrash_UPSELL.xlsx: ชีต Raw, TARGET, TARGET STAFF, Shop list)</label><input id="axl" type="file" accept=".xlsx,.xlsm"></div>
@@ -1799,7 +1799,7 @@ function buildSms(){
   const ar=grp('ar').filter(x=>x.tg>0&&isFinite(x.ach));
   const top=[...ar].sort((a,b)=>b.ach-a.ach).slice(0,3),bot=[...ar].sort((a,b)=>a.ach-b.ach).slice(0,3);
   const tot=SH.reduce((a,s)=>({rv:a.rv+rrv(sr[s.i]),tg:a.tg+shopRec[s.i].tg0}),{rv:0,tg:0});
-  const ns=new Map();ST.forEach(t=>{const a=SH[t.sh].ar||'(ไม่ระบุ)';if(!ns.has(a))ns.set(a,{name:a,ns:0,head:0});const o=ns.get(a);if(t.tg0>0){o.head++;if(staffRec[t.i].qty===0)o.ns++}});
+  const ns=new Map();ST.forEach(t=>{if(!/^Ret|Multi/i.test(t.et||''))return;const a=SH[t.sh].ar||'(ไม่ระบุ)';if(!ns.has(a))ns.set(a,{name:a,ns:0,head:0});const o=ns.get(a);if(t.tg0>0){o.head++;if(staffRec[t.i].qty===0)o.ns++}});
   const nsL=[...ns.values()].filter(x=>x.ns>0).sort((a,b)=>b.ns-a.ns||b.ns/b.head-a.ns/a.head).slice(0,5);
   const cm=new Map(),camps=D.camps||[];
   for(const x of D.sales){if(x.length<7||x[0]!==cal.cm)continue;const k=x[6];let o=cm.get(k);if(!o){o={name:camps[k]||'(ไม่ระบุ)',q:0};cm.set(k,o)}o.q++}
@@ -1814,7 +1814,7 @@ function buildSms(){
   rg.forEach(x=>L.push(`${x.name} ${pc(x.rv,x.tg)}`));L.push(`Total ${pc(tot.rv,tot.tg)}`);
   L.push('','TOP 3 Area');top.forEach((x,i)=>L.push(`${i+1}.${ab(x.name)} ${pc(x.rv,x.tg)}`));
   L.push('','Bottom 3 Area');bot.forEach((x,i)=>L.push(`${i+1}.${ab(x.name)} ${pc(x.rv,x.tg)}`));
-  L.push('','Bottom 5 Area No-Sale Staff');nsL.forEach((x,i)=>L.push(`${i+1}.${ab(x.name)} ${x.ns} (${pc(x.ns,x.head)})`));
+  L.push('','Bottom 5 Area No-Sale Staff (Ret+Multi)');nsL.forEach((x,i)=>L.push(`${i+1}.${ab(x.name)} ${x.ns} (${pc(x.ns,x.head)})`));
   L.push('','TOP 3 Campaign');cL.forEach((x,i)=>L.push(`${i+1}.${sh(x.name)} ${f0(x.q)}`));
   return L.join('\n');
 }
