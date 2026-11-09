@@ -449,14 +449,29 @@ async function ghPush(P,retry){
   const r=await fetch(api,{method:'PUT',headers:{...h,'Content-Type':'application/json'},body:JSON.stringify(body)});
   if(!r.ok){if((r.status===409||r.status===422)&&!retry)return ghPush(P,true);throw{code:'gh_'+r.status}}
 }
+function shrinkImg(src,max,q){return new Promise(res=>{if(!/^data:image\/(png|jpe?g)/.test(src))return res(src);const im=new Image();im.onload=()=>{try{const k=Math.min(1,max/Math.max(im.width,im.height));const c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.width*k));c.height=Math.max(1,Math.round(im.height*k));const x=c.getContext('2d');x.drawImage(im,0,0,c.width,c.height);const png=/png/.test(src);let o=png?c.toDataURL('image/webp',q):c.toDataURL('image/jpeg',q);if(png&&!/^data:image\/webp/.test(o))o=c.toDataURL('image/png');res(o.length<src.length?o:src)}catch(e){res(src)}};im.onerror=()=>res(src);im.src=src})}
+async function shrinkData(data,lvl){
+  if(!data.kit)return data;const kit=JSON.parse(JSON.stringify(data.kit));
+  for(const sl of kit.slides)for(const e of sl.els)if(e.t==='pic'&&e.src)e.src=await shrinkImg(e.src,lvl?700:1280,lvl?0.55:0.8);
+  return{...data,kit};
+}
 async function publishData(data,pubPw,admPw,statEl,done){
+  data=await shrinkData(data,0);
   try{
     setStat(statEl,'กำลังเข้ารหัสและบันทึก…');
     const g0=ghCfg();
-    const P=await sealPayload(data,pubPw,admPw,g0.token?g0:null);
+    let P=await sealPayload(data,pubPw,admPw,g0.token?g0:null);
     const art=typeof claude!=='undefined'?await claude.use('artifact'):null;
     let mode='claude';
-    if(art)await art.publish({'data.json':{content:JSON.stringify(P),contentType:'application/json'}});
+    if(art){
+      try{await art.publish({'data.json':{content:JSON.stringify(P),contentType:'application/json'}})}
+      catch(e){
+        if(!(e&&/too_large/.test(e.code||e.message||'')))throw e;
+        setStat(statEl,'ไฟล์ใหญ่เกินกำหนด กำลังลดขนาดอัตโนมัติ…');
+        data=await shrinkData(data,1);P=await sealPayload(data,pubPw,admPw,g0.token?g0:null);
+        await art.publish({'data.json':{content:JSON.stringify(P),contentType:'application/json'}});
+      }
+    }
     else if(ghCfg().token){setStat(statEl,'กำลังอัปโหลดขึ้น GitHub…');await ghPush(P);mode='gh'}
     else{mode='local';browserSave('data.json',JSON.stringify(P),'application/json')}
     PENDIV=PAY&&PAY.data?PAY.data.iv:'';PENDUNTIL=Date.now()+(mode==='gh'?6*60000:0);
