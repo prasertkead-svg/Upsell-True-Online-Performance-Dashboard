@@ -433,11 +433,12 @@ async function onFile(e){
       <tr><td>ยอดขายเดือนล่าสุด (฿)</td><td class="n">${f0(o.act)}</td><td class="n">${f0(n.act)}</td></tr>
       <tr><td>ยอดขายเดือนก่อน (฿)</td><td class="n">${f0(o.prev)}</td><td class="n">${f0(n.prev)}</td></tr></tbody></table></div>`;
     setStat(st,'อ่านไฟล์สำเร็จ ตรวจสอบตัวเลขด้านล่าง แล้วกดบันทึกเพื่อเผยแพร่','ok');
-    $('#aSave').disabled=false;
+    $('#aSave').disabled=false;autoUp($('#aSave'));
   }catch(x){NEWD=null;setStat(st,'อ่านไฟล์ไม่สำเร็จ: '+(x.message||x),'err')}
 }
 const GH_KEY='uwp_gh_v1',GH_DEF='prasertkead-svg/Upsell-True-Online-Performance-Dashboard';
 let PENDIV='',PENDUNTIL=0;
+function autoUp(btn){if(typeof claude!=='undefined'||ghCfg().token){setTimeout(()=>{if(!btn.disabled)btn.click()},50);return true}const g=$('#aGh');if(g){g.hidden=false;g.scrollIntoView({behavior:'smooth',block:'center'});setStat($('#ghStat'),'วาง GitHub Token ที่นี่ครั้งเดียว แล้วกดบันทึก ระบบจะอัปโหลดไฟล์ที่เลือกขึ้น GitHub ให้ทันที','');}return false}
 function ghCfg(){try{return JSON.parse(store.get(GH_KEY)||'null')||{}}catch(e){return{}}}
 async function ghPush(P,retry){
   const c=ghCfg();const repo=(c.repo||GH_DEF).trim(),br=(c.branch||'main').trim(),path='data.json';
@@ -493,7 +494,7 @@ function bindAdmin(){
   if(typeof claude==='undefined'){const c=ghCfg();$('#aGh').hidden=false;$('#ghTok').value=c.token||'';$('#ghRepo').value=c.repo||GH_DEF;$('#ghBr').value=c.branch||'main';
     $('#ghSave').onclick=async()=>{const t=$('#ghTok').value.trim();store.set(GH_KEY,JSON.stringify({token:t,repo:$('#ghRepo').value.trim()||GH_DEF,branch:$('#ghBr').value.trim()||'main'}));
       if(!t){setStat($('#ghStat'),'ล้าง Token ในเครื่องนี้แล้ว','ok');return}
-      $('#ghSave').disabled=true;await publishData(D,ADM.pubPw,ADM.pw,$('#ghStat'),'');$('#ghSave').disabled=false}}
+      $('#ghSave').disabled=true;if(NEWD){$('#aSave').click()}else if(NEWK){$('#aKitSave').click()}else await publishData(D,ADM.pubPw,ADM.pw,$('#ghStat'),'');$('#ghSave').disabled=false}}
   $('#akit').onchange=async e=>{
     const f=e.target.files[0];NEWK=null;$('#aKitSave').disabled=true;if(!f)return;const st=$('#aKitStat');
     try{
@@ -501,7 +502,7 @@ function bindAdmin(){
       if(typeof DecompressionStream==='undefined')throw new Error('เบราว์เซอร์นี้ไม่รองรับ กรุณาใช้ Chrome/Edge/Safari รุ่นใหม่');
       NEWK=await kitParse(await f.arrayBuffer(),'');
       if(!NEWK.slides.length)throw new Error('ไม่พบสไลด์ในไฟล์');
-      setStat(st,`อ่านไฟล์สำเร็จ ${NEWK.slides.length} สไลด์ (ขนาดข้อมูล ${(JSON.stringify(NEWK).length/1048576).toFixed(1)} MB) กดบันทึกเพื่อเผยแพร่`,'ok');$('#aKitSave').disabled=false;
+      setStat(st,`อ่านไฟล์สำเร็จ ${NEWK.slides.length} สไลด์ (ขนาดข้อมูล ${(JSON.stringify(NEWK).length/1048576).toFixed(1)} MB) กดบันทึกเพื่อเผยแพร่`,'ok');$('#aKitSave').disabled=false;autoUp($('#aKitSave'));
     }catch(x){NEWK=null;setStat(st,'อ่านไฟล์ไม่สำเร็จ: '+(x.message||x),'err')}
   };
   $('#aKitSave').onclick=async()=>{if(!NEWK)return;$('#aKitSave').disabled=true;await publishData({...D,kit:NEWK},ADM.pubPw,ADM.pw,$('#aKitStat'),'บันทึก Sale Kit เรียบร้อย ผู้ใช้ทุกคนจะเห็นสไลด์ใหม่');NEWK=null;$('#akit').value=''};
