@@ -249,6 +249,14 @@ thead th{background:var(--surface2)}
 <p class="note">เมื่อบันทึก ผู้ใช้ทุกคนจะเห็นข้อมูลใหม่ทันที ไฟล์ Excel ถูกประมวลผลในเบราว์เซอร์ของคุณและเข้ารหัสก่อนบันทึก</p>
 </div></section>
 <section class="card c6"><div class="ch"><h2>Admin · Sale Kit (PowerPoint)</h2></div><div class="cb"><div class="fld"><label for="akit">เลือกไฟล์ PowerPoint (.pptx) ชื่อไฟล์อะไรก็ได้</label><input id="akit" type="file" accept=".pptx"></div><div class="stat" id="aKitStat" hidden></div><button class="btn pri" id="aKitSave" disabled>บันทึกและเผยแพร่ Sale Kit</button><p class="note">อัปโหลดไฟล์ใหม่ได้ทุกเมื่อ สไลด์ทั้งหมดในแท็บ Sale Kit จะถูกแทนที่ด้วยไฟล์ใหม่ (ไม่ขึ้นกับชื่อไฟล์) ข้อความ ตาราง กราฟและรูปถูกแปลงในเบราว์เซอร์ของคุณ</p></div></section>
+<section class="card c6" id="aGh" hidden><div class="ch"><h2>Admin · GitHub (อัปขึ้นทันทีเมื่อเปิดนอก claude.ai)</h2></div><div class="cb">
+<div class="fld"><label for="ghTok">GitHub Token (สิทธิ์ Contents: Read and write เฉพาะ repo นี้)</label><input id="ghTok" type="password" autocomplete="off" placeholder="github_pat_…"></div>
+<div class="fld"><label for="ghRepo">Repo (owner/ชื่อ)</label><input id="ghRepo" type="text" autocomplete="off"></div>
+<div class="fld"><label for="ghBr">Branch</label><input id="ghBr" type="text" autocomplete="off"></div>
+<div class="stat" id="ghStat" hidden></div>
+<button class="btn pri" id="ghSave">บันทึกการตั้งค่า GitHub</button>
+<p class="note">Token เก็บไว้ในเบราว์เซอร์เครื่องนี้เท่านั้น (เห็นเฉพาะ Admin) เมื่อกดบันทึกข้อมูลหรืออัปโหลดไฟล์ ระบบจะอัปไฟล์ data.json ขึ้น GitHub ให้ทันที ควรสร้าง Fine-grained token ที่ให้สิทธิ์เฉพาะ repo นี้ และกด "ออกจากระบบ" เมื่อใช้เครื่องร่วมกัน</p>
+</div></section>
 <section class="card c6"><div class="ch"><h2>Admin · รหัสผ่าน</h2></div><div class="cb">
 <div class="fld"><label for="aPub">รหัสผู้ใช้ทั่วไป (ไม่เห็นแท็บ Admin)</label><input id="aPub" type="text" autocomplete="off"></div>
 <div class="fld"><label for="aAdm">รหัส Admin</label><input id="aAdm" type="text" autocomplete="off"></div>
@@ -329,7 +337,7 @@ $('#gform').addEventListener('submit',async e=>{
   }catch(x){er.textContent=x.message==='nocrypto'?'เบราว์เซอร์นี้ไม่รองรับการถอดรหัส':x.message==='load'||x.name==='TypeError'?'โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่':'รหัสผ่านไม่ถูกต้อง'}
   b.disabled=false;b.textContent='เข้าใช้งาน';
 });
-$('#lock').onclick=()=>{store.del(SK_S);store.del(SK_V);location.reload()};
+$('#lock').onclick=()=>{store.del(SK_S);store.del(SK_V);store.del(GH_KEY);location.reload()};
 window.addEventListener('pagehide',saveView);
 
 /* ---------- tabs ---------- */
@@ -424,26 +432,46 @@ async function onFile(e){
     $('#aSave').disabled=false;
   }catch(x){NEWD=null;setStat(st,'อ่านไฟล์ไม่สำเร็จ: '+(x.message||x),'err')}
 }
+const GH_KEY='uwp_gh_v1',GH_DEF='prasertkead-svg/Upsell-True-Online-Performance-Dashboard';
+let PENDIV='',PENDUNTIL=0;
+function ghCfg(){try{return JSON.parse(store.get(GH_KEY)||'null')||{}}catch(e){return{}}}
+async function ghPush(P,retry){
+  const c=ghCfg();const repo=(c.repo||GH_DEF).trim(),br=(c.branch||'main').trim(),path='data.json';
+  const api=`https://api.github.com/repos/${repo}/contents/${path}`;
+  const h={Authorization:'Bearer '+c.token,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};
+  let sha;const g=await fetch(api+'?ref='+encodeURIComponent(br),{headers:h,cache:'no-store'});
+  if(g.ok){sha=(await g.json()).sha}else if(g.status!==404)throw{code:'gh_'+g.status};
+  const body={message:'Update data.json from Admin',content:b64(te.encode(JSON.stringify(P))),branch:br};if(sha)body.sha=sha;
+  const r=await fetch(api,{method:'PUT',headers:{...h,'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!r.ok){if((r.status===409||r.status===422)&&!retry)return ghPush(P,true);throw{code:'gh_'+r.status}}
+}
 async function publishData(data,pubPw,admPw,statEl,done){
   try{
     setStat(statEl,'กำลังเข้ารหัสและบันทึก…');
     const P=await sealPayload(data,pubPw,admPw);
     const art=typeof claude!=='undefined'?await claude.use('artifact'):null;
-    let local=false;
+    let mode='claude';
     if(art)await art.publish({'data.json':{content:JSON.stringify(P),contentType:'application/json'}});
-    else{local=true;browserSave('data.json',JSON.stringify(P),'application/json')}
+    else if(ghCfg().token){setStat(statEl,'กำลังอัปโหลดขึ้น GitHub…');await ghPush(P);mode='gh'}
+    else{mode='local';browserSave('data.json',JSON.stringify(P),'application/json')}
+    PENDIV=PAY&&PAY.data?PAY.data.iv:'';PENDUNTIL=Date.now()+(mode==='gh'?6*60000:0);
     PAY=P;LASTIV=P.data.iv;D=data;ADM={pw:admPw,pubPw};
     UI.month=0;initModel();F={rg:'',ar:'',ty:''};fillFilters();$('#fRg').value='';$('#fTy').value='';renderAll();renderAdmin();
-    setStat(statEl,local?'เปิดเพจนี้นอก claude.ai จึงบันทึกขึ้นระบบโดยตรงไม่ได้ ได้ดาวน์โหลดไฟล์ data.json ใหม่ให้แล้ว นำไปแทนที่ไฟล์ data.json ใน GitHub repo (Add file → Upload files) แล้วทุกคนจะเห็นข้อมูลใหม่ภายใน 1–2 นาที ตอนนี้หน้านี้แสดงข้อมูลใหม่แล้ว':(done||'บันทึกเรียบร้อย ผู้ใช้ทุกคนจะเห็นข้อมูลใหม่'),local?'':'ok');
+    setStat(statEl,mode==='gh'?'อัปโหลดขึ้น GitHub เรียบร้อย ผู้ใช้ทุกคนจะเห็นข้อมูลใหม่ภายใน 1–2 นาที (ตามรอบอัปเดตของ GitHub Pages)':mode==='local'?'ยังไม่ได้ตั้งค่า GitHub Token ในแท็บ Admin จึงอัปขึ้นเองไม่ได้ ได้ดาวน์โหลดไฟล์ data.json ใหม่ให้แล้ว ตั้งค่า Token ด้านล่างเพื่อให้อัปทันทีในครั้งถัดไป':(done||'บันทึกเรียบร้อย ผู้ใช้ทุกคนจะเห็นข้อมูลใหม่'),mode==='local'?'':'ok');
   }catch(e){
     const c=e&&e.code;
     setStat(statEl,c==='conflict'?'มีการบันทึกอื่นเกิดขึ้นก่อน หน้าจะรีเฟรชเป็นเวอร์ชันล่าสุด กรุณาลองใหม่':
+      /^gh_(401|403)$/.test(c||'')?'GitHub ปฏิเสธ (Token ไม่ถูกต้อง หมดอายุ หรือไม่มีสิทธิ์เขียนไฟล์ใน repo) ตรวจสอบ Token ด้านล่าง':
+      c==='gh_404'?'ไม่พบ repo/branch บน GitHub หรือ Token ไม่มีสิทธิ์เข้าถึง repo นี้ ตรวจสอบชื่อ repo ด้านล่าง':
+      /^gh_/.test(c||'')?'อัปโหลดขึ้น GitHub ไม่สำเร็จ ('+c+') กรุณาลองใหม่':
       ['not_writer','not_granted','capability_disabled','capability_removed','unavailable','not_declared'].includes(c)?'บันทึกไม่ได้ในมุมมองนี้ (ต้องเป็นเจ้าของหรือผู้แก้ไข และหน้านี้ต้องไม่ได้แชร์แบบสาธารณะ)':'บันทึกไม่สำเร็จ ('+(c||(e&&e.message)||'error')+')','err');
   }
 }
 let NEWK=null;
 function bindAdmin(){
   $('#axl').onchange=onFile;
+  if(typeof claude==='undefined'){const c=ghCfg();$('#aGh').hidden=false;$('#ghTok').value=c.token||'';$('#ghRepo').value=c.repo||GH_DEF;$('#ghBr').value=c.branch||'main';
+    $('#ghSave').onclick=()=>{const t=$('#ghTok').value.trim();store.set(GH_KEY,JSON.stringify({token:t,repo:$('#ghRepo').value.trim()||GH_DEF,branch:$('#ghBr').value.trim()||'main'}));setStat($('#ghStat'),t?'บันทึกการตั้งค่าแล้ว ครั้งต่อไปที่อัปโหลดข้อมูลจะขึ้น GitHub ทันที':'ล้าง Token แล้ว','ok')}}
   $('#akit').onchange=async e=>{
     const f=e.target.files[0];NEWK=null;$('#aKitSave').disabled=true;if(!f)return;const st=$('#aKitStat');
     try{
@@ -523,6 +551,7 @@ async function checkLive(){
   try{
     const P=await fetchPay();
     if(!P||!P.data||P.data.iv===LASTIV)return;
+    if(Date.now()<PENDUNTIL&&P.data.iv===PENDIV)return; // GitHub Pages still serving the previous file
     let r;
     try{r=await openPayload(P,ADM.pw)}
     catch(e){clearInterval(LIVET);store.del(SK_S);flash('มีการเปลี่ยนรหัสผ่านหรือข้อมูลใหม่ กรุณาเข้าสู่ระบบอีกครั้ง');setTimeout(()=>location.reload(),2500);return}
