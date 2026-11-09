@@ -1,0 +1,1011 @@
+<title>Upsell True Online Performance Dashboard</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky filter bar, KPI band, insight panel, then chart+table cards in a 12-col grid */
+:root{
+  --bg:#f3f4fb; --surface:#ffffff; --surface2:#f7f8fd; --ink:#161a33; --ink2:#4a5170; --muted:#7b82a0; --line:#e3e5f1; --grid:#ebedf6;
+  --s1:#5b5bd6; --s2:#f2711c; --s3:#12a594; --s4:#e5a50a; --s5:#d6409f; --base:#a3a9c4; --tgt:#5b6283; --wk:#b4b8f2;
+  --good:#087a1f; --warn:#9a6a00; --crit:#c42f2f; --goodbg:#e4f5e8; --warnbg:#fff3d6; --critbg:#fde6e6; --infobg:#e9eafd;
+  --font:'IBM Plex Sans Thai','Noto Sans Thai',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d0f1f; --surface:#161a30; --surface2:#1c2140; --ink:#eceefb; --ink2:#b7bcd8; --muted:#8890b0; --line:#2a2f52; --grid:#242949;
+  --s1:#8084f0; --s2:#ef8240; --s3:#2bbfae; --s4:#f0b429; --s5:#e66bb5; --base:#6a7098; --tgt:#a3a9c4; --wk:#4a4eaa;
+  --good:#4cc468; --warn:#f0b73a; --crit:#f07575; --goodbg:#16301f; --warnbg:#33290f; --critbg:#3a1c1e; --infobg:#232857; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d0f1f; --surface:#161a30; --surface2:#1c2140; --ink:#eceefb; --ink2:#b7bcd8; --muted:#8890b0; --line:#2a2f52; --grid:#242949;
+  --s1:#8084f0; --s2:#ef8240; --s3:#2bbfae; --s4:#f0b429; --s5:#e66bb5; --base:#6a7098; --tgt:#a3a9c4; --wk:#4a4eaa;
+  --good:#4cc468; --warn:#f0b73a; --crit:#f07575; --goodbg:#16301f; --warnbg:#33290f; --critbg:#3a1c1e; --infobg:#232857; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:14px;line-height:1.5;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 40px}
+button,select,input{font:inherit;color:inherit}
+.rec li,.in p,.in h3,.note,.k .s{overflow-wrap:anywhere}
+.hrow>*,.flt>*{min-width:0}
+.flt select{width:100%}
+@media(max-width:600px){.flt label{flex:1 1 40%}.flt .btn{flex:1 1 40%}}
+.wrap{max-width:1480px;margin:0 auto}
+/* gate */
+#gate{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:var(--bg);padding:24px}
+.gbox{width:min(380px,100%);background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:32px 28px;display:grid;gap:14px}
+.gbox h1{margin:0;font-size:20px;font-weight:600}
+.gbox p{margin:0;color:var(--ink2);font-size:13px}
+.gbox input{height:44px;border:1px solid var(--line);border-radius:8px;padding:0 12px;background:var(--surface2);letter-spacing:.2em;font-family:var(--mono)}
+.gbox input:focus-visible,button:focus-visible,select:focus-visible,.th:focus-visible{outline:2px solid var(--s1);outline-offset:2px}
+.btn{height:36px;padding:0 14px;border:1px solid var(--line);background:var(--surface);border-radius:8px;cursor:pointer;font-weight:500;font-size:13px;white-space:nowrap}
+.btn:hover{background:var(--surface2)}
+.btn.pri{background:linear-gradient(135deg,var(--s1),#7c4ddb);border-color:transparent;color:#fff}
+.btn.pri:hover{filter:brightness(1.1)}
+#gerr{color:var(--crit);font-size:13px;min-height:19px}
+/* header */
+#hdr{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line);padding:12px 0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
+.hrow{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between}
+.ttl h1{margin:0;font-size:20px;font-weight:700;letter-spacing:-.01em}
+.ttl .st{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.flt{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.flt label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:2px}
+.flt select{height:34px;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:0 8px;min-width:130px;max-width:200px}
+/* kpi */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));gap:12px;margin:18px 0}
+.k{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;min-width:0}
+.k .l{font-size:12px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.04em}
+.k .v{font-size:26px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:2px;white-space:nowrap}
+.k .v small{font-size:14px;font-weight:500;color:var(--muted)}
+.k .s{font-size:12px;color:var(--ink2);margin-top:2px}
+.k.hero{border-color:var(--s1)}
+.pill{display:inline-flex;align-items:center;gap:4px;padding:1px 8px;border-radius:99px;font-size:12px;font-weight:600;white-space:nowrap}
+.pill.good{background:var(--goodbg);color:var(--good)}.pill.warn{background:var(--warnbg);color:var(--warn)}.pill.crit{background:var(--critbg);color:var(--crit)}.pill.info{background:var(--infobg);color:var(--s1)}
+.good{color:var(--good)}.warn{color:var(--warn)}.crit{color:var(--crit)}
+/* cards */
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;min-width:0;grid-column:span 12}
+.card.c6{grid-column:span 6}.card.c4{grid-column:span 4}.card.c8{grid-column:span 8}
+@media(max-width:1000px){.card.c6,.card.c4,.card.c8{grid-column:span 12}}
+.ch{flex-wrap:wrap;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.ch h2{margin:0;font-size:15px;font-weight:600}
+.ch .sub{font-size:12px;color:var(--muted);font-weight:400;margin-left:6px}
+.tg{width:28px;height:28px;border-radius:6px;border:1px solid var(--line);background:var(--surface);cursor:pointer;line-height:1}
+.cb{padding:14px 16px;min-width:0}
+.chart{position:relative;height:300px}
+.chart.tall{height:420px}
+.note{font-size:12px;color:var(--muted);margin-top:8px}
+/* tables */
+.tb{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}
+.tb input[type=search]{height:32px;border:1px solid var(--line);background:var(--surface2);border-radius:8px;padding:0 10px;min-width:150px;flex:1;max-width:260px}
+.tb .cnt{font-size:12px;color:var(--muted);margin-left:auto}
+.sc{overflow:auto;border:1px solid var(--line);border-radius:8px;max-height:1780px}
+.sc.open{max-height:none}
+.in b{color:var(--ink)}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{padding:7px 10px;text-align:left;white-space:nowrap;border-bottom:1px solid var(--line)}
+td.n,th.n{text-align:right}
+thead th{position:sticky;top:0;background:var(--surface2);z-index:2;font-weight:600;font-size:12px;color:var(--ink2);cursor:pointer;user-select:none}
+thead th:hover{color:var(--ink)}
+thead th .ar{display:inline-block;width:10px;color:var(--s1)}
+tbody tr:hover td{background:var(--surface2)}
+tfoot td{position:sticky;bottom:0;background:var(--surface2);font-weight:700;border-top:2px solid var(--line)}
+td.nm{max-width:260px;overflow:hidden;text-overflow:ellipsis}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:baseline}
+.dot.good{background:var(--good)}.dot.warn{background:var(--warn)}.dot.crit{background:var(--crit)}
+.bar{display:inline-block;height:6px;border-radius:3px;background:var(--s1);vertical-align:middle;margin-left:6px;min-width:1px}
+/* insights */
+.ins{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));gap:10px}
+.in{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface2);min-width:0}
+.in h3{margin:0 0 4px;font-size:13px;font-weight:600;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.in p{margin:0;font-size:13px;color:var(--ink2)}
+.rec{margin:0;padding-left:20px;display:grid;gap:6px;font-size:13px;color:var(--ink2)}
+.rec b{color:var(--ink)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{height:30px;padding:0 12px;border:0;background:var(--surface);cursor:pointer;font-size:13px;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button.on{background:linear-gradient(135deg,var(--s1),#7c4ddb);color:#fff}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+.two>*{min-width:0}
+@media(max-width:900px){.two{grid-template-columns:minmax(0,1fr)}}
+.two h3{margin:0 0 8px;font-size:13px;font-weight:600}
+/* tabs */
+.tabs{display:flex;gap:4px;margin-top:10px;overflow-x:auto;scrollbar-width:thin}
+.tabs button{height:38px;padding:0 16px;border:0;border-bottom:3px solid transparent;background:transparent;cursor:pointer;font-weight:500;color:var(--ink2);white-space:nowrap;border-radius:6px 6px 0 0}
+.tabs button:hover{background:var(--surface)}
+.tabs button.on{color:var(--s1);border-bottom-color:var(--s1);font-weight:700}
+.tabp{margin-top:16px}
+.tabp>.kpis{grid-column:span 12;margin:0}
+.fld{display:grid;gap:4px;margin-bottom:12px;max-width:420px}
+.fld label{font-size:12px;color:var(--muted)}
+.fld input{height:36px;border:1px solid var(--line);border-radius:8px;padding:0 10px;background:var(--surface2);font-family:var(--mono)}
+.stat{padding:8px 12px;border-radius:8px;font-size:13px;background:var(--infobg);color:var(--ink);margin:10px 0}
+.stat.err{background:var(--critbg);color:var(--crit)}.stat.ok{background:var(--goodbg);color:var(--good)}
+footer{margin-top:20px;font-size:12px;color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){.k,.card{transition:border-color .15s}}
+/* modern theme overrides */
+body{background:radial-gradient(1200px 500px at 85% -10%,rgba(124,77,219,.10),transparent 60%),radial-gradient(900px 500px at -10% 0,rgba(91,91,214,.09),transparent 55%),var(--bg);background-attachment:fixed}
+#gate{background:linear-gradient(135deg,#1e1b4b,#3730a3 55%,#6d28d9)}
+.gbox{border:0;border-radius:20px;box-shadow:0 20px 60px rgba(15,10,60,.35)}
+#hdr{margin-inline:-16px;padding:14px 16px 0;background:linear-gradient(135deg,#1e1b4b 0%,#3730a3 55%,#6d28d9 100%);border-bottom:0;border-radius:0 0 20px 20px;box-shadow:0 8px 24px rgba(55,48,163,.25);color:#fff}
+#hdr .ttl h1{color:#fff;font-size:21px}
+#hdr .ttl .st{color:rgba(255,255,255,.72)}
+#hdr .flt label{color:rgba(255,255,255,.75)}
+#hdr .flt select{background:rgba(255,255,255,.95);color:#161a33;border-color:transparent}
+#hdr .btn{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.28);color:#fff}
+#hdr .btn:hover{background:rgba(255,255,255,.22)}
+#hdr .btn.pri{background:#fff;color:#3730a3;border-color:#fff}
+#hdr .seg{border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.08)}
+#hdr .seg button{background:transparent;color:#fff;border-right-color:rgba(255,255,255,.2)}
+#hdr .seg button.on{background:#fff;color:#3730a3}
+#hdr .tabs button{color:rgba(255,255,255,.78)}
+#hdr .tabs button:hover{background:rgba(255,255,255,.12)}
+#hdr .tabs button.on{color:#fff;border-bottom-color:#c4b5fd;background:rgba(255,255,255,.1)}
+body::before{background:#1e1b4b}
+.card{border-radius:16px;border-color:var(--line);box-shadow:0 1px 2px rgba(22,26,51,.04),0 6px 20px rgba(79,70,229,.06)}
+.ch{border-bottom-color:var(--line)}
+.ch h2{letter-spacing:-.01em}
+.k{border-radius:16px;box-shadow:0 1px 2px rgba(22,26,51,.04),0 6px 20px rgba(79,70,229,.06);border-color:var(--line)}
+.k.hero{background:linear-gradient(135deg,var(--s1),#7c4ddb);border:0;color:#fff}
+.k.hero .l,.k.hero .v,.k.hero .v small,.k.hero .s{color:#fff}
+.k.hero .l,.k.hero .v small,.k.hero .s{opacity:.85}
+.in{border-radius:12px}
+.sc{border-radius:10px}
+thead th{background:var(--surface2)}
+
+</style>
+
+<div id="gate">
+  <form class="gbox" id="gform" autocomplete="off">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+    <h1>Upsell True Online Performance Dashboard</h1>
+    <p>กรอกรหัสส่วนตัวเพื่อเข้าใช้งาน Dashboard ข้อมูลทั้งหมดถูกเข้ารหัสไว้ในหน้านี้</p>
+    <input id="gpass" type="password" placeholder="รหัสผ่าน" aria-label="รหัสผ่าน" autofocus>
+    <div id="gerr" role="alert"></div>
+    <button class="btn pri" type="submit" id="gbtn">เข้าใช้งาน</button>
+  </form>
+</div>
+
+<div id="app" hidden>
+<div id="hdr"><div class="wrap">
+  <div class="hrow">
+    <div class="ttl"><h1>Upsell True Online Performance Dashboard</h1><div class="st" id="asof"></div></div>
+    <div class="flt">
+      <label>เดือน<select id="fMo"></select></label>
+      <div class="seg" id="metSeg" role="group" aria-label="มุมมอง"><button data-m="rev" class="on">Revenue (฿)</button><button data-m="qty">QTY</button></div>
+      <label>Region<select id="fRg"></select></label>
+      <label>Area<select id="fAr"></select></label>
+      <label>Shop Type<select id="fTy"></select></label>
+      <button class="btn" id="fReset">ล้างตัวกรอง</button>
+      <button class="btn pri" id="xAll">Export Excel (ทั้งหมด)</button>
+      <button class="btn" id="lock">ออกจากระบบ</button>
+    </div>
+  </div>
+  <nav class="tabs" id="tabs" role="tablist">
+    <button data-t="overall" class="on">Over All</button><button data-t="area">By Area</button><button data-t="shop">By Shop</button><button data-t="staff">By Staff</button><button data-t="campaign">Campaign</button><button data-t="insight">Insight</button><button data-t="admin" id="tabAdmin" hidden>Admin</button>
+  </nav>
+</div></div>
+
+<div class="wrap">
+<div class="grid tabp" id="p-overall">
+<div class="kpis" id="kpis"></div>
+<section class="card c8"><div class="ch"><h2>Daily Sales Trend<span class=sub id="dailySub">เดือนนี้ เทียบเดือนที่แล้ว</span></h2><button class=tg aria-label=ย่อ/ขยาย>▾</button></div><div class="cb"><div class="chart"><canvas id="chDaily"></canvas></div><div class="note" id="dailyNote"></div></div></section>
+<section class="card c4"><div class="ch"><h2>สัดส่วนยอดขายตามหมวด<span class=sub id="pieSub">VAS · MESH · CCTV · Content · TRUE ID</span></h2><button class=tg aria-label=ย่อ/ขยาย>▾</button></div><div class="cb"><div class="chart"><canvas id="chPie"></canvas></div><div class="note" id="pieNote"></div></div></section>
+<section class="card c4"><div class="ch"><h2 id="tvaT">Target vs Actual vs Runrate</h2><button class=tg aria-label=ย่อ/ขยาย>▾</button></div><div class="cb"><div class="chart"><canvas id="chTVA"></canvas></div></div></section>
+<section class="card c8"><div class="ch"><h2>Performance by Region</h2><button class=tg aria-label=ย่อ/ขยาย>▾</button></div><div class="cb"><div class="chart" style="height:240px"><canvas id="chRegion"></canvas></div><div id="tRegion" style="margin-top:12px"></div></div></section>
+<section class="card "><div class="ch"><h2>Performance by VAS · MESH · CCTV · Content · TRUE ID<span class=sub>TRUE ID = TRUEIDTV + TRUEID</span></h2><button class=tg aria-label=ย่อ/ขยาย>▾</button></div><div class="cb"><div class="two"><div class="chart"><canvas id="chCat"></canvas></div><div id="tCat"></div></div></div></section>
+<section class="card "><div class="ch"><h2>Revenue &amp; Quantity Comparison<span class=sub id="rqSub"></span></h2><div class="seg" id="rqDim"><button class="on" data-m="cat">Category</button><button data-m="rg">Region</button><button data-m="ar">Area</button></div></div><div class="cb"><div class="two"><div><h3>Revenue (฿)</h3><div class="chart"><canvas id="chRev"></canvas></div></div><div><h3>Quantity (รายการ)</h3><div class="chart"><canvas id="chQty"></canvas></div></div></div></div></section>
+<section class="card "><div class="ch"><h2>Daily · WoW · MTD · MOM Trend</h2><div class="seg" id="trTab"><button class="on" data-m="daily">Daily</button><button data-m="wow">WoW</button><button data-m="mtd">MTD</button><button data-m="mom">MOM</button></div></div><div class="cb"><div class="chart"><canvas id="chTrend"></canvas></div><div class="note" id="trNote"></div><div id="tTrend" style="margin-top:12px"></div></div></section>
+</div>
+<div class="grid tabp" id="p-area" hidden>
+<section class="card "><div class="ch"><h2>Performance by Area<span class=sub id="areaSub">% Achievement และ % Runrate</span></h2><button class=tg aria-label=ย่อ/ขยาย>▾</button></div><div class="cb"><div class="chart tall"><canvas id="chArea"></canvas></div></div></section>
+<section class="card "><div class="ch"><h2>Area Table<span class=sub>แสดงครบทุก Area</span></h2><button class=tg aria-label=ย่อ/ขยาย>▾</button></div><div class="cb"><div id="tArea"></div></div></section>
+</div>
+<div class="grid tabp" id="p-shop" hidden>
+<section class="card "><div class="ch"><h2>Top 10 / Bottom 10 Shops</h2><div class="seg" id="rkShop"><button class="on" data-m="act">ตามยอดขาย</button><button data-m="ach" data-tg="1">ตาม %Ach</button></div></div><div class="cb"><div class="two"><div><h3>Top 10 Shops</h3><div id="tTopShop"></div></div><div><h3>Bottom 10 Shops <span class="note" id="zeroShop"></span></h3><div id="tBotShop"></div></div></div></div></section>
+<section class="card "><div class="ch"><h2>Performance by Shop<span class=sub id="bandSub">จำนวนร้านตามช่วง RR %Ach</span></h2><button class=tg aria-label=ย่อ/ขยาย>▾</button></div><div class="cb"><div class="chart" style="height:260px"><canvas id="chShopBand"></canvas></div></div></section>
+<section class="card "><div class="ch"><h2>Shop Table<span class=sub>ทุกร้านใน Shop list</span></h2><button class=tg aria-label=ย่อ/ขยาย>▾</button></div><div class="cb"><div id="tShop"></div></div></section>
+</div>
+<div class="grid tabp" id="p-staff" hidden>
+<section class="card"><div class="ch"><h2>1 · No Sales Analysis<span class="sub">by Area, Shop Type &amp; Shop Name</span></h2><div class="seg" id="nsDim"><button class="on" data-m="ar">Area</button><button data-m="ty">Shop Type</button><button data-m="shop">Shop Name</button></div></div><div class="cb"><div class="chart tall"><canvas id="chNS"></canvas></div><div class="note" id="nsNote"></div><div id="tNS" style="margin-top:12px"></div></div></section>
+<section class="card"><div class="ch"><h2>2 · Top Shops by No-Sales Concentration<span class="sub">ร้านที่มีพนักงานไม่มียอดมากที่สุด</span></h2><button class="tg" aria-label="ย่อ/ขยาย">▾</button></div><div class="cb"><div class="chart tall"><canvas id="chNSTop"></canvas></div><div class="note" id="nsTopNote"></div><div id="tNSTop" style="margin-top:12px"></div></div></section>
+<section class="card"><div class="ch"><h2>3 · Performance Distribution<span class="sub">Above Average · Average · Below Average · No Sales</span></h2><button class="tg" aria-label="ย่อ/ขยาย">▾</button></div><div class="cb"><div class="two"><div><h3>จำนวนพนักงานตามระดับผลงาน</h3><div class="chart" style="height:260px"><canvas id="chDist1"></canvas></div></div><div><h3>การกระจายยอดขายต่อคน (เทียบค่าเฉลี่ย)</h3><div class="chart" style="height:260px"><canvas id="chDist2"></canvas></div></div></div><h3 style="margin:16px 0 8px">สัดส่วนระดับผลงานแยกตาม Area</h3><div class="chart tall"><canvas id="chStaffMix"></canvas></div><div class="note" id="mixNote"></div><div id="tMix" style="margin-top:12px"></div></div></section>
+<section class="card"><div class="ch"><h2>4 · Detailed Performance Table<span class="sub">พนักงานทุกคนที่มีเป้าหรือมียอด</span></h2><button class="tg" aria-label="ย่อ/ขยาย">▾</button></div><div class="cb"><div id="tStaff"></div></div></section>
+<section class="card"><div class="ch"><h2>5 · ข้อมูลเชิงลึกสำหรับผู้บริหาร<span class="sub">สร้างอัตโนมัติจากข้อมูลตามตัวกรองที่เลือก</span></h2><button class="tg" aria-label="ย่อ/ขยาย">▾</button></div><div class="cb"><div class="ins" id="staffIns"></div><h3 style="margin:16px 0 8px;font-size:14px">ข้อเสนอแนะ</h3><ol class="rec" id="staffRecs"></ol></div></section>
+<section class="card"><div class="ch"><h2>6 · AVG Productivity — ผลิตภาพเฉลี่ยต่อคน<span class="sub">ACTUAL · RR (Runrate) · RR ÷ ACTUAL</span></h2></div><div class="cb"><div class="note" style="margin:0">นับพนักงานที่มีเป้าหรือมียอด · Actual / Staff = ยอดจริงเฉลี่ยต่อคน · RR / Staff = Runrate เฉลี่ยต่อคน (คาดการณ์สิ้นเดือน) · RR ÷ Actual = เท่าของยอดจริงที่คาดว่าจะปิดเดือน (เดือนที่ปิดแล้ว = 1.0)</div></div></section>
+<section class="card"><div class="ch"><h2>6.1 Average Productivity — Region × Shop Type</h2><button class="tg" aria-label="ย่อ/ขยาย">▾</button></div><div class="cb"><div id="tAP1"></div></div></section>
+<section class="card"><div class="ch"><h2>6.2 Average Productivity — Area × Shop Type</h2><button class="tg" aria-label="ย่อ/ขยาย">▾</button></div><div class="cb"><div id="tAP2"></div></div></section>
+<section class="card"><div class="ch"><h2>6.3 Average Productivity — by Function (EMP_TYPE)</h2><button class="tg" aria-label="ย่อ/ขยาย">▾</button></div><div class="cb"><div id="tAP3"></div></div></section>
+<section class="card"><div class="ch"><h2>6.4 Average Productivity — by Region</h2><button class="tg" aria-label="ย่อ/ขยาย">▾</button></div><div class="cb"><div id="tAP4"></div></div></section>
+<section class="card"><div class="ch"><h2>6.5 Average Productivity — by Area</h2><button class="tg" aria-label="ย่อ/ขยาย">▾</button></div><div class="cb"><div id="tAP5"></div></div></section>
+<section class="card"><div class="ch"><h2>6.6 Average Productivity — by Shop</h2><button class="tg" aria-label="ย่อ/ขยาย">▾</button></div><div class="cb"><div id="tAP6"></div></div></section>
+</div>
+<div class="grid tabp" id="p-campaign" hidden>
+<section class="card"><div class="ch"><h2>Campaign Ranking<span class="sub">เรียงตามจำนวนการขาย (Qty) เดือนนี้</span></h2><div class="seg" id="cpCat"><button class="on" data-m="all">ทั้งหมด</button><button data-m="2">CCTV</button><button data-m="3">Content</button><button data-m="1">MESH</button><button data-m="4">TRUE ID</button><button data-m="0">VAS</button></div></div><div class="cb"><div class="chart tall"><canvas id="chCamp"></canvas></div><div class="note" id="campNote"></div></div></section>
+<section class="card"><div class="ch"><h2>Campaign Table<span class="sub">TRUE ID = TRUEIDTV + TRUEID</span></h2><button class="tg" aria-label="ย่อ/ขยาย">▾</button></div><div class="cb"><div id="tCamp"></div></div></section>
+<section class="card"><div class="ch"><h2>Insight แยกตามหมวด<span class="sub">CCTV · Content · MESH · TRUE ID · VAS</span></h2><button class="tg" aria-label="ย่อ/ขยาย">▾</button></div><div class="cb"><div class="ins" id="campIns"></div></div></section>
+</div>
+<div class="grid tabp" id="p-insight" hidden>
+<section class="card "><div class="ch"><h2>Insight วิเคราะห์ และข้อเสนอแนะ<span class=sub>สร้างอัตโนมัติจากข้อมูลตามตัวกรองที่เลือก</span></h2><button class=tg aria-label=ย่อ/ขยาย>▾</button></div><div class="cb"><div class="ins" id="insights"></div><h3 style="margin:16px 0 8px;font-size:14px">ข้อเสนอแนะ</h3><ol class="rec" id="recs"></ol></div></section>
+</div>
+<div class="grid tabp" id="p-admin" hidden>
+<section class="card c6"><div class="ch"><h2>Admin · อัปเดตข้อมูล</h2></div><div class="cb">
+<div class="stat" id="aInfo"></div>
+<div class="fld"><label for="axl">เลือกไฟล์ Excel ใหม่ (รูปแบบเดียวกับ Refrash_UPSELL.xlsx: ชีต Raw, TARGET, TARGET STAFF, Shop list)</label><input id="axl" type="file" accept=".xlsx,.xlsm"></div>
+<div class="stat" id="aStat" hidden></div>
+<div id="aPrev"></div>
+<button class="btn pri" id="aSave" disabled>บันทึกและเผยแพร่ข้อมูลใหม่</button>
+<p class="note">เมื่อบันทึก ผู้ใช้ทุกคนจะเห็นข้อมูลใหม่ทันที ไฟล์ Excel ถูกประมวลผลในเบราว์เซอร์ของคุณและเข้ารหัสก่อนบันทึก</p>
+</div></section>
+<section class="card c6"><div class="ch"><h2>Admin · รหัสผ่าน</h2></div><div class="cb">
+<div class="fld"><label for="aPub">รหัสผู้ใช้ทั่วไป (ไม่เห็นแท็บ Admin)</label><input id="aPub" type="text" autocomplete="off"></div>
+<div class="fld"><label for="aAdm">รหัส Admin</label><input id="aAdm" type="text" autocomplete="off"></div>
+<div class="stat" id="aPwStat" hidden></div>
+<button class="btn pri" id="aPw">บันทึกรหัสผ่าน</button>
+<p class="note">รหัสต้องยาวอย่างน้อย 6 ตัวอักษร การเปลี่ยนรหัสจะเข้ารหัสข้อมูลใหม่ทั้งชุด</p>
+</div></section>
+</div>
+  <footer id="foot"></footer>
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+let PAY=null,ROLE='pub',ADM={};
+const CATS=['VAS','MESH','CCTV','Content','TRUE ID'];
+const TH_M=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const DOWN=['อา','จ','อ','พ','พฤ','ศ','ส'];
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const f0=n=>isFinite(n)?Math.round(n).toLocaleString('en-US'):'–';
+const fp=(n,d=1)=>isFinite(n)?(n*100).toFixed(d)+'%':'–';
+const fg=(n,d=1)=>isFinite(n)?(n>=0?'▲ +':'▼ ')+(n*100).toFixed(d)+'%':'–';
+const ratio=(a,b)=>b>0?a/b:NaN;
+const growth=(a,b)=>b>0?a/b-1:NaN;
+let D,SH,ST,cal,shopRec,staffRec,scope,charts={},F={rg:'',ar:'',ty:''},UI={rkShop:'act',rkStaff:'act',rq:'cat',tr:'daily',ns:'ar',camp:'all',metric:'rev',month:0};
+
+/* ---------- crypto / gate ---------- */
+const te=new TextEncoder(),td=new TextDecoder(),ITER=150000;
+const b64=u=>{let s='';for(let i=0;i<u.length;i+=32768)s+=String.fromCharCode.apply(null,u.subarray(i,i+32768));return btoa(s)};
+const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function kek(pw,salt){const km=await crypto.subtle.importKey('raw',te.encode(pw),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:ITER,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['encrypt','decrypt'])}
+const dec=(key,o)=>crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(o.iv)},key,unb64(o.ct)).then(x=>new Uint8Array(x));
+async function enc(key,u8){const iv=crypto.getRandomValues(new Uint8Array(12));const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},key,u8));return{iv:b64(iv),ct:b64(ct)}}
+async function openPayload(P,pw){
+  let role=null,dk=null,admK=null;
+  for(const r of ['pub','adm']){try{const k=await kek(pw,unb64(P[r].salt));dk=await dec(k,P[r]);role=r;if(r==='adm')admK=k;break}catch(e){}}
+  if(!role)throw new Error('bad');
+  const dkey=await crypto.subtle.importKey('raw',dk,'AES-GCM',false,['decrypt']);
+  const data=JSON.parse(td.decode(await dec(dkey,P.data)));
+  let pubPw='';if(role==='adm'){try{pubPw=td.decode(await dec(admK,P.pw))}catch(e){}}
+  return{data,role,pubPw};
+}
+async function sealPayload(data,pubPw,admPw){
+  const dk=crypto.getRandomValues(new Uint8Array(32));
+  const dkey=await crypto.subtle.importKey('raw',dk,'AES-GCM',false,['encrypt']);
+  const wrap=async pw=>{const salt=crypto.getRandomValues(new Uint8Array(16));const k=await kek(pw,salt);const e=await enc(k,dk);return{o:{salt:b64(salt),iv:e.iv,ct:e.ct},k}};
+  const pub=await wrap(pubPw),adm=await wrap(admPw);
+  return{v:2,pub:pub.o,adm:adm.o,data:await enc(dkey,te.encode(JSON.stringify(data))),pw:await enc(adm.k,te.encode(pubPw))};
+}
+async function loadPay(){const r=await fetch('data.json',{cache:'no-store'});if(!r.ok)throw new Error('load');return r.json()}
+loadPay().then(p=>{PAY=p}).catch(()=>{});
+$('#gform').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const b=$('#gbtn'),er=$('#gerr');er.textContent='';b.disabled=true;b.textContent='กำลังตรวจสอบ…';
+  try{
+    if(!(window.crypto&&crypto.subtle))throw new Error('nocrypto');
+    if(!PAY)PAY=await loadPay();
+    const pw=$('#gpass').value.trim();
+    const r=await openPayload(PAY,pw);
+    D=r.data;ROLE=r.role;ADM={pw,pubPw:r.pubPw};
+    $('#gate').hidden=true;$('#app').hidden=false;$('#gpass').value='';
+    boot();
+  }catch(x){er.textContent=x.message==='nocrypto'?'เบราว์เซอร์นี้ไม่รองรับการถอดรหัส':x.message==='load'||x.name==='TypeError'?'โหลดข้อมูลไม่สำเร็จ กรุณารีเฟรชหน้า':'รหัสผ่านไม่ถูกต้อง';}
+  b.disabled=false;b.textContent='เข้าใช้งาน';
+});
+$('#lock').onclick=()=>location.reload();
+
+/* ---------- tabs ---------- */
+const TABS=['overall','area','shop','staff','campaign','insight','admin'];
+function showTab(t){
+  if(t==='admin'&&ROLE!=='adm')t='overall';
+  UI.tab=t;
+  TABS.forEach(x=>{const p=$('#p-'+x);if(p)p.hidden=x!==t});
+  document.querySelectorAll('#tabs button').forEach(b=>{const on=b.dataset.t===t;b.classList.toggle('on',on);b.setAttribute('aria-selected',on)});
+  if(t==='admin')renderAdmin();
+  if(scope)renderCharts();
+}
+
+/* ---------- admin: parse Excel -> dataset ---------- */
+const sv=v=>v==null?'':String(v).trim();
+function ymd(v){
+  if(typeof v==='number'){const d=new Date(Date.UTC(1899,11,30)+Math.floor(v)*864e5);return[d.getUTCFullYear(),d.getUTCMonth()+1,d.getUTCDate()]}
+  if(v==null||v==='')return null;
+  const d=new Date(v);return isNaN(d)?null:[d.getFullYear(),d.getMonth()+1,d.getDate()];
+}
+function buildDataset(R,fname){
+  const CATMAP={VAS:0,MESH:1,CCTV:2,CONTENT:3,TRUEID:4,TRUEIDTV:4};
+  const seen=new Map();
+  for(const r of R.shops){const c=sv(r['SHOP CODE']);if(!c)continue;const has=!!sv(r['AM']);const o=seen.get(c);if(!o||(!o.has&&has))seen.set(c,{r,has})}
+  const list=[...seen.values()].map(x=>x.r).sort((a,b)=>sv(a.REGION).localeCompare(sv(b.REGION))||sv(a.AREA).localeCompare(sv(b.AREA))||sv(a['SHOP NAME']).localeCompare(sv(b['SHOP NAME'])));
+  const tg=new Map();for(const r of R.target){const c=sv(r.CODE);if(c)tg.set(c,(tg.get(c)||0)+(Number(r.TOL_UPSELL)||0))}
+  const idx=new Map();
+  const shops=list.map((r,i)=>{const c=sv(r['SHOP CODE']);idx.set(c,i);return[c,sv(r['SHOP NAME']),sv(r.REGION),sv(r.AREA),sv(r['TYPE SHOP']),sv(r['Size Shop']),tg.get(c)||0,sv(r.AM)]});
+  const sm=new Map();
+  for(const r of R.staff){const id=sv(r.EMP_ID),sc=sv(r.shop_code);if(!id||!idx.has(sc))continue;const t=Number(r.TOL_UPSELL)||0;
+    const g=sm.get(id);if(!g)sm.set(id,{id,name:sv(r.NAME),pos:sv(r.Position),et:sv(r.EMP_TYPE),sh:idx.get(sc),best:t,tot:t});else{g.tot+=t;if(t>g.best){g.best=t;g.sh=idx.get(sc)}}}
+  const sidx=new Map();const staff=[...sm.values()].map((g,i)=>{sidx.set(g.id,i);return[g.id,g.name,g.pos,g.et,g.sh,Math.round(g.tot*100)/100]});
+  const camps=[],cmap=new Map();const sales=[];let mx=null;const hasFlag=R.raw.some(r=>sv(r.FLAG_UPSELL));
+  for(const r of R.raw){
+    if(hasFlag&&sv(r.FLAG_UPSELL)!=='Upsell')continue;
+    const c=CATMAP[sv(r.UPSELL_TYPE).toUpperCase()];if(c===undefined)continue;
+    const si=idx.get(sv(r.DLR_PARTNER_CODE));if(si===undefined)continue;
+    const dt=ymd(r.INTRACN_DT_CMPLET!=null?r.INTRACN_DT_CMPLET:r.INTRACN_DT);if(!dt)continue;
+    const v=Number(r.NET_RC)||0;const ei=sidx.has(sv(r.SL_PARTNER_CODE))?sidx.get(sv(r.SL_PARTNER_CODE)):-1;
+    const cn=sv(r.CAMPAIGN_NAME)||sv(r.PROD_OFR_NM)||'(ไม่ระบุ)';if(!cmap.has(cn)){cmap.set(cn,camps.length);camps.push(cn)}
+    sales.push([dt[1],dt[2],si,ei,c,v,cmap.get(cn)]);
+    const k=dt[0]*10000+dt[1]*100+dt[2];if(mx===null||k>mx)mx=k;
+  }
+  if(!shops.length||!sales.length||mx===null)throw new Error('ไม่พบข้อมูลที่ใช้ได้ ตรวจสอบชื่อชีตและคอลัมน์');
+  const s=String(mx);
+  return{asof:`${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`,shops,staff,camps,sales,meta:{updated:new Date().toISOString(),file:fname||''}};
+}
+function readTbl(wb,name,must){
+  const ws=wb.Sheets[name];if(!ws)throw new Error('ไม่พบชีต '+name);
+  const a=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null,blankrows:false});
+  const hi=a.findIndex(r=>r&&r.some(c=>sv(c)===must));if(hi<0)throw new Error(`ชีต ${name} ไม่พบคอลัมน์ ${must}`);
+  const h=a[hi].map(sv);
+  return a.slice(hi+1).map(r=>{const o={};h.forEach((k,i)=>{if(k&&!(k in o))o[k]=r[i]});return o});
+}
+function summarize(d){
+  const [Y,M]=d.asof.split('-').map(Number);let a=0,p=0;for(const x of d.sales){if(x[0]===M)a+=x[5];else p+=x[5]}
+  return{asof:d.asof,shops:d.shops.length,staff:d.staff.length,sales:d.sales.length,target:d.shops.reduce((t,s)=>t+s[6],0),act:a,prev:p};
+}
+let NEWD=null;
+function renderAdmin(){
+  const m=D.meta||{};
+  $('#aInfo').innerHTML=`ข้อมูลปัจจุบัน: ณ <b>${esc(D.asof)}</b> · ${SH.length} ร้าน · ${ST.length} พนักงาน · ${f0(D.sales.length)} รายการขาย<br>อัปเดตล่าสุด: ${m.updated?esc(new Date(m.updated).toLocaleString('th-TH')):'–'} ${m.file?'· ไฟล์ '+esc(m.file):''}`;
+  if(!$('#aPub').value)$('#aPub').value=ADM.pubPw||'';
+  if(!$('#aAdm').value)$('#aAdm').value=ADM.pw||'';
+}
+function setStat(el,msg,cls){el.hidden=!msg;el.textContent=msg||'';el.className='stat'+(cls?' '+cls:'')}
+async function onFile(e){
+  const f=e.target.files[0];NEWD=null;$('#aSave').disabled=true;$('#aPrev').innerHTML='';if(!f)return;
+  const st=$('#aStat');
+  try{
+    if(!window.XLSX)throw new Error('โหลดตัวอ่าน Excel ไม่สำเร็จ ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่');
+    setStat(st,'กำลังอ่านไฟล์…');
+    await new Promise(r=>setTimeout(r,30));
+    const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});
+    const R={raw:readTbl(wb,'Raw','UPSELL_TYPE'),target:readTbl(wb,'TARGET','CODE'),staff:readTbl(wb,'TARGET STAFF','EMP_ID'),shops:readTbl(wb,'Shop list','SHOP CODE')};
+    NEWD=buildDataset(R,f.name);
+    const n=summarize(NEWD),o=summarize(D);
+    $('#aPrev').innerHTML=`<div class="sc open"><table><thead><tr><th>รายการ</th><th class="n">ข้อมูลเดิม</th><th class="n">ข้อมูลใหม่</th></tr></thead><tbody>
+      <tr><td>ข้อมูล ณ วันที่</td><td class="n">${o.asof}</td><td class="n">${n.asof}</td></tr>
+      <tr><td>จำนวนร้าน (Shop list)</td><td class="n">${f0(o.shops)}</td><td class="n">${f0(n.shops)}</td></tr>
+      <tr><td>จำนวนพนักงาน</td><td class="n">${f0(o.staff)}</td><td class="n">${f0(n.staff)}</td></tr>
+      <tr><td>รายการขาย</td><td class="n">${f0(o.sales)}</td><td class="n">${f0(n.sales)}</td></tr>
+      <tr><td>Target รวม (฿)</td><td class="n">${f0(o.target)}</td><td class="n">${f0(n.target)}</td></tr>
+      <tr><td>ยอดขายเดือนล่าสุด (฿)</td><td class="n">${f0(o.act)}</td><td class="n">${f0(n.act)}</td></tr>
+      <tr><td>ยอดขายเดือนก่อน (฿)</td><td class="n">${f0(o.prev)}</td><td class="n">${f0(n.prev)}</td></tr></tbody></table></div>`;
+    setStat(st,'อ่านไฟล์สำเร็จ ตรวจสอบตัวเลขด้านล่าง แล้วกดบันทึกเพื่อเผยแพร่','ok');
+    $('#aSave').disabled=false;
+  }catch(x){NEWD=null;setStat(st,'อ่านไฟล์ไม่สำเร็จ: '+(x.message||x),'err')}
+}
+async function publishData(data,pubPw,admPw,statEl,done){
+  try{
+    setStat(statEl,'กำลังเข้ารหัสและบันทึก…');
+    const P=await sealPayload(data,pubPw,admPw);
+    const art=await claude.use('artifact');
+    if(!art)throw{code:'unavailable'};
+    await art.publish({'data.json':{content:JSON.stringify(P),contentType:'application/json'}});
+    PAY=P;D=data;ADM={pw:admPw,pubPw};
+    UI.month=0;initModel();F={rg:'',ar:'',ty:''};fillFilters();$('#fRg').value='';$('#fTy').value='';renderAll();renderAdmin();
+    setStat(statEl,done||'บันทึกเรียบร้อย ผู้ใช้ทุกคนจะเห็นข้อมูลใหม่','ok');
+  }catch(e){
+    const c=e&&e.code;
+    setStat(statEl,c==='conflict'?'มีการบันทึกอื่นเกิดขึ้นก่อน หน้าจะรีเฟรชเป็นเวอร์ชันล่าสุด กรุณาลองใหม่':
+      ['not_writer','not_granted','capability_disabled','capability_removed','unavailable','not_declared'].includes(c)?'บันทึกไม่ได้ในมุมมองนี้ (ต้องเป็นเจ้าของหรือผู้แก้ไข และหน้านี้ต้องไม่ได้แชร์แบบสาธารณะ)':'บันทึกไม่สำเร็จ ('+(c||(e&&e.message)||'error')+')','err');
+  }
+}
+function bindAdmin(){
+  $('#axl').onchange=onFile;
+  $('#aSave').onclick=async()=>{if(!NEWD)return;$('#aSave').disabled=true;await publishData(NEWD,$('#aPub').value.trim()||ADM.pubPw,$('#aAdm').value.trim()||ADM.pw,$('#aStat'),'บันทึกข้อมูลใหม่เรียบร้อย ผู้ใช้ทุกคนจะเห็นข้อมูลล่าสุด');NEWD=null;$('#aPrev').innerHTML='';$('#axl').value=''};
+  $('#aPw').onclick=async()=>{
+    const pp=$('#aPub').value.trim(),ap=$('#aAdm').value.trim(),st=$('#aPwStat');
+    if(pp.length<6||ap.length<6)return setStat(st,'รหัสต้องยาวอย่างน้อย 6 ตัวอักษร','err');
+    if(pp===ap)return setStat(st,'รหัสผู้ใช้ทั่วไปและรหัส Admin ต้องไม่เหมือนกัน','err');
+    $('#aPw').disabled=true;await publishData(D,pp,ap,st,'เปลี่ยนรหัสผ่านเรียบร้อย ใช้รหัสใหม่ในการเข้าครั้งถัดไป');$('#aPw').disabled=false;
+  };
+}
+
+
+/* ---------- data model ---------- */
+function newRec(tg,tg0){return{tg,tg0:tg0==null?tg:tg0,rv:0,pRv:0,pFv:0,act:0,qty:0,wd:0,we:0,pAct:0,pQty:0,pFull:0,pFullQty:0,dc:new Float64Array(32),dp:new Float64Array(32),qc:new Float64Array(32),qp:new Float64Array(32),
+  cat:[0,1,2,3,4].map(()=>({rv:0,pRv:0,pFv:0,act:0,qty:0,wd:0,we:0,pAct:0,pQty:0,pFull:0,pFullQty:0}))}}
+function upd(r,m,d,c,v){
+  const k=r.cat[c],rv=v;v=UI.metric==='qty'?1:v;
+  if(m===cal.cm){r.act+=v;r.rv+=rv;r.qty++;r.dc[d]+=v;r.qc[d]++;k.act+=v;k.rv+=rv;k.qty++;if(cal.we[d]){r.we+=v;k.we+=v}else{r.wd+=v;k.wd+=v}}
+  else if(m===cal.pm){r.pFull+=v;r.pFv+=rv;r.pFullQty++;r.dp[d]+=v;r.qp[d]++;k.pFull+=v;k.pFv+=rv;k.pFullQty++;if(d<=cal.E){r.pAct+=v;r.pRv+=rv;r.pQty++;k.pAct+=v;k.pRv+=rv;k.pQty++}}
+}
+const SK=['tg','tg0','rv','pRv','pFv','act','qty','wd','we','pAct','pQty','pFull','pFullQty'];
+function addRec(a,b){
+  for(const k of SK)a[k]+=b[k];
+  for(let i=0;i<32;i++){a.dc[i]+=b.dc[i];a.dp[i]+=b.dp[i];a.qc[i]+=b.qc[i];a.qp[i]+=b.qp[i]}
+  for(let c=0;c<5;c++)for(const k of ['rv','pRv','pFv','act','qty','wd','we','pAct','pQty','pFull','pFullQty'])a.cat[c][k]+=b.cat[c][k];
+}
+const sumRecs=l=>{const r=newRec(0);l.forEach(x=>addRec(r,x));return r};
+const CUR=()=>UI.metric==='qty'?'':'฿';
+const UM=()=>UI.metric==='qty'?'Qty':'฿';
+const tgOn=()=>UI.metric!=='qty'&&cal.cm===cal.lm;
+const PYR=()=>cal.pm>cal.cm?cal.Y-1:cal.Y;
+const rrOf=r=>r.act+(cal.wdE?r.wd/cal.wdE*cal.wdRem:0)+(cal.weE?r.we/cal.weE*cal.weRem:0);
+
+function monthList(){
+  const [Y,Mo]=D.asof.split('-').map(Number);const key=m=>(m<=Mo?Y:Y-1)*12+m;
+  return [...new Set(D.sales.map(x=>x[0]))].sort((a,b)=>key(a)-key(b)).map(m=>({m,y:m<=Mo?Y:Y-1}));
+}
+function initModel(){
+  const [Y0,Lm,Ld]=D.asof.split('-').map(Number);
+  const ml=monthList();if(!ml.some(x=>x.m===Lm))ml.push({m:Lm,y:Y0});
+  if(!UI.month||!ml.some(x=>x.m===UI.month))UI.month=Lm;
+  const Mo=UI.month,Y=Mo<=Lm?Y0:Y0-1,latest=Mo===Lm;
+  const N=new Date(Date.UTC(Y,Mo,0)).getUTCDate(),Dd=latest?Ld:N;
+  cal={Y,cm:Mo,lm:Lm,pm:Mo===1?12:Mo-1,E:Dd,N,we:[]};
+  cal.wdE=cal.weE=cal.wdRem=cal.weRem=cal.wdTot=cal.weTot=0;
+  for(let d=1;d<=N;d++){const w=new Date(Date.UTC(Y,Mo-1,d)).getUTCDay();const we=w===0||w===6;cal.we[d]=we;
+    if(we){cal.weTot++;d<=Dd?cal.weE++:cal.weRem++}else{cal.wdTot++;d<=Dd?cal.wdE++:cal.wdRem++}}
+  const on=tgOn();
+  SH=D.shops.map((a,i)=>({i,code:a[0],name:a[1],rg:a[2],ar:a[3],ty:a[4],sz:a[5],tg:on?a[6]:0,tg0:a[6],am:a[7]}));
+  ST=D.staff.map((a,i)=>({i,id:a[0],name:a[1],pos:a[2],et:a[3],sh:a[4],tg:on?a[5]:0,tg0:a[5]}));
+  shopRec=SH.map(s=>newRec(s.tg,s.tg0));staffRec=ST.map(s=>newRec(s.tg,s.tg0));
+  for(const [m,d,si,ei,c,v] of D.sales){upd(shopRec[si],m,d,c,v);if(ei>=0)upd(staffRec[ei],m,d,c,v)}
+  $('#asof').textContent=`${latest?`ข้อมูล ณ ${cal.E} ${TH_M[cal.cm-1]} ${cal.Y+543}`:`เดือน ${TH_M[cal.cm-1]} ${cal.Y+543} (ทั้งเดือน)`} · เดือนที่แล้ว = ${TH_M[cal.pm-1]} · มุมมอง: ${UI.metric==='qty'?'QTY (จำนวนรายการ)':'Revenue (฿)'}`;
+  fillMonths(ml);
+  $('#foot').textContent=`แหล่งข้อมูล: ${(D.meta&&D.meta.file)||'Refrash_UPSELL.xlsx'} (Raw, TARGET, TARGET STAFF, Shop list) · ยอดขาย = NET_RC ตามวันที่ INTRACN_DT_CMPLET · ใช้เฉพาะร้านที่อยู่ใน Shop list (${SH.length} ร้าน) ร้านที่ไม่อยู่ในรายการถูกตัดออก`;
+}
+function boot(){
+  initModel();$('#tabAdmin').hidden=ROLE!=='adm';fillFilters();bindUI();showTab('overall');renderAll();
+}
+
+/* ---------- filters ---------- */
+function opts(sel,vals,all){sel.innerHTML=`<option value="">${all}</option>`+vals.map(v=>`<option>${esc(v)}</option>`).join('')}
+function fillFilters(){
+  const u=a=>[...new Set(a)].sort();
+  opts($('#fRg'),u(SH.map(s=>s.rg)),'ทั้งหมด');
+  opts($('#fTy'),u(SH.map(s=>s.ty)),'ทั้งหมด');
+  fillAreas();
+}
+function fillMonths(ml){const el=$('#fMo');el.innerHTML=ml.map(x=>`<option value="${x.m}">${TH_M[x.m-1]} ${x.y+543}</option>`).join('');el.value=UI.month}
+function fillAreas(){opts($('#fAr'),[...new Set(SH.filter(s=>!F.rg||s.rg===F.rg).map(s=>s.ar))].sort(),'ทั้งหมด');$('#fAr').value=F.ar}
+function bindUI(){
+  $('#fMo').onchange=e=>{UI.month=+e.target.value;initModel();renderAll()};
+  document.querySelectorAll('#metSeg button').forEach(b=>b.onclick=()=>{UI.metric=b.dataset.m;document.querySelectorAll('#metSeg button').forEach(x=>x.classList.toggle('on',x===b));initModel();renderAll()});
+  $('#fRg').onchange=e=>{F.rg=e.target.value;F.ar='';fillAreas();renderAll()};
+  $('#fAr').onchange=e=>{F.ar=e.target.value;renderAll()};
+  $('#fTy').onchange=e=>{F.ty=e.target.value;renderAll()};
+  $('#fReset').onclick=()=>{F={rg:'',ar:'',ty:''};$('#fRg').value='';$('#fTy').value='';fillAreas();renderAll()};
+  document.querySelectorAll('.tg').forEach(b=>b.onclick=()=>{const body=b.closest('.card').querySelector('.cb');body.hidden=!body.hidden;b.textContent=body.hidden?'▸':'▾'});
+  const seg=(id,key)=>document.querySelectorAll(id+' button').forEach(b=>b.onclick=()=>{document.querySelectorAll(id+' button').forEach(x=>x.classList.toggle('on',x===b));UI[key]=b.dataset.m;renderAll()});
+  seg('#rkShop','rkShop');seg('#nsDim','ns');seg('#cpCat','camp');seg('#rqDim','rq');seg('#trTab','tr');
+  $('#xAll').onclick=exportAll;
+  document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>showTab(b.dataset.t));
+  bindAdmin();
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>setTimeout(renderCharts,50));
+  new MutationObserver(()=>setTimeout(renderCharts,50)).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+}
+
+/* ---------- row builders ---------- */
+function rowFrom(r,o){const rr=rrOf(r);return{...o,tg:r.tg,tg0:r.tg0,rv:r.rv,act:r.act,qty:r.qty,ach:ratio(r.act,r.tg),rr,rrach:ratio(rr,r.tg),gap:r.tg-r.act,pAct:r.pAct,mom:growth(r.act,r.pAct)}}
+function computeScope(){
+  const inS=s=>(!F.rg||s.rg===F.rg)&&(!F.ar||s.ar===F.ar)&&(!F.ty||s.ty===F.ty);
+  const shops=SH.filter(inS);const staff=ST.filter(s=>inS(SH[s.sh]));
+  const rec=sumRecs(shops.map(s=>shopRec[s.i]));
+  scope={shops,staff,rec,rr:rrOf(rec)};
+  scope.shopRows=shops.map(s=>rowFrom(shopRec[s.i],{code:s.code,name:s.name,rg:s.rg,ar:s.ar,ty:s.ty,sz:s.sz,am:s.am}));
+  scope.staffRows=staff.map(s=>{const sh=SH[s.sh];return rowFrom(staffRec[s.i],{id:s.id,name:s.name,pos:s.pos,et:s.et,sc:sh.code,shop:sh.name,ar:sh.ar,rg:sh.rg,ty:sh.ty,pFull:staffRec[s.i].pFull})});
+  scope.staffSell=scope.staffRows.filter(x=>x.act>0);
+  const grp=(key)=>{const m=new Map();shops.forEach(s=>{const k=s[key];if(!m.has(k))m.set(k,{k,rg:s.rg,list:[]});m.get(k).list.push(s)});
+    return [...m.values()].map(g=>{const r=sumRecs(g.list.map(s=>shopRec[s.i]));return{...rowFrom(r,{name:g.k,rg:g.rg,shops:g.list.length,activeShops:g.list.filter(s=>shopRec[s.i].act>0).length}),rec:r}})};
+  scope.regionRows=grp('rg');scope.areaRows=grp('ar');
+}
+function totalRow(rows,extra={}){
+  const t=rows.reduce((a,r)=>({tg:a.tg+r.tg,act:a.act+r.act,qty:a.qty+r.qty,rr:a.rr+r.rr,pAct:a.pAct+r.pAct}),{tg:0,act:0,qty:0,rr:0,pAct:0});
+  return{...t,ach:ratio(t.act,t.tg),rrach:ratio(t.rr,t.tg),gap:t.tg-t.act,mom:growth(t.act,t.pAct),...extra};
+}
+
+/* ---------- table component ---------- */
+const TB={};
+const C={s:'s',n:'n',p:'p',g:'g'};
+function stClass(kind,v){
+  if(!isFinite(v))return'';
+  if(kind==='ach'){const pace=cal.E/cal.N;return v>=pace?'good':v>=pace*.7?'warn':'crit'}
+  return v>=1?'good':v>=.8?'warn':'crit';
+}
+function cell(c,row){
+  const v=row[c.k];
+  if(c.t==='s')return`<td class="${c.cls||''}" title="${esc(v)}">${esc(v)}</td>`;
+  if(c.t==='n')return`<td class="n">${f0(v)}</td>`;
+  if(c.t==='d')return`<td class="n">${isFinite(v)?v.toFixed(1):'–'}</td>`;
+  if(c.t==='p'){const cl=c.st?stClass(c.st,v):'';return`<td class="n">${cl?`<span class="dot ${cl}"></span>`:''}${fp(v)}</td>`}
+  if(c.t==='g'){const cl=!isFinite(v)?'':v>=0?'good':'crit';return`<td class="n ${cl}">${fg(v)}</td>`}
+  return`<td>${esc(v)}</td>`;
+}
+function expVal(c,v){return(c.t==='p'||c.t==='g')?(isFinite(v)?+(v*100).toFixed(2):''):(c.t==='n'?Math.round(v):(c.t==='d'?(isFinite(v)?+v.toFixed(2):''):v))}
+function sortRows(rows,sk,sd){
+  if(!sk)return rows;const arr=[...rows];
+  arr.sort((a,b)=>{let x=a[sk],y=b[sk];const xn=x==null||(typeof x==='number'&&!isFinite(x)),yn=y==null||(typeof y==='number'&&!isFinite(y));
+    if(xn&&yn)return 0;if(xn)return 1;if(yn)return-1;
+    return typeof x==='string'?x.localeCompare(y,'th')*sd:(x-y)*sd});
+  return arr;
+}
+const ROWS_VIS=50;
+const NOTG=['tg','ach','rrach','gap','tgHead','pvt','tp','vt'],QHIDE=['qty','pQty','momQ','pFullQty','qtyHead'];
+function vcols(cols,id){
+  if(id==='tCamp'||id==='Campaign')return cols;
+  const q=UI.metric==='qty',t=tgOn();
+  return cols.filter(c=>!(!t&&NOTG.includes(c.k))&&!(q&&QHIDE.includes(c.k))&&!(q&&c.k==='avg'&&(id==='tCat'||id==='Category')));
+}
+function table(id,el,ds,o={}){
+  let st=TB[id];
+  if(!st||st.el!==el||!el.firstChild){
+    st=TB[id]={el,sk:o.sort,sd:o.dir||-1,q:'',open:false,simple:!!o.simple};
+    el.innerHTML=`<div class="tb">${st.simple?'':'<input type="search" placeholder="ค้นหา…" aria-label="ค้นหา">'}<button class="btn" data-a="csv">Export CSV</button><button class="btn" data-a="exp" hidden></button><span class="cnt"></span></div><div class="sc"><table></table></div>`;
+    el.querySelector('[data-a=csv]').onclick=()=>saveCSV(id);
+    el.querySelector('[data-a=exp]').onclick=()=>{st.open=!st.open;paint(id)};
+    const q=el.querySelector('input');if(q)q.oninput=e=>{st.q=e.target.value.trim().toLowerCase();paint(id)};
+  }
+  st.ds=ds;paint(id);
+}
+function paint(id){
+  const st=TB[id],{rows,total}=st.ds,cols=vcols(st.ds.cols,id);
+  let r=rows;
+  if(st.q)r=r.filter(x=>cols.some(c=>c.t==='s'&&String(x[c.k]??'').toLowerCase().includes(st.q)));
+  r=sortRows(r,st.sk,st.sd);
+  const t=st.el.querySelector('table');
+  t.innerHTML=`<thead><tr>${cols.map(c=>`<th class="th ${c.t==='s'?'':'n'}" tabindex="0" data-k="${c.k}" aria-sort="${st.sk===c.k?(st.sd>0?'ascending':'descending'):'none'}">${esc(c.l)}<span class="ar">${st.sk===c.k?(st.sd>0?'↑':'↓'):''}</span></th>`).join('')}</tr></thead>
+  <tbody>${r.map(x=>`<tr>${cols.map(c=>cell(c,x)).join('')}</tr>`).join('')||`<tr><td colspan="${cols.length}" class="note">ไม่พบข้อมูล</td></tr>`}</tbody>
+  ${total&&!st.q?`<tfoot><tr>${cols.map(c=>c.k in total?cell(c,total):`<td>${c===cols[0]?'รวม':''}</td>`).join('')}</tr></tfoot>`:''}`;
+  t.querySelectorAll('th').forEach(h=>{const go=()=>{const k=h.dataset.k;if(st.sk===k)st.sd*=-1;else{st.sk=k;st.sd=cols.find(c=>c.k===k).t==='s'?1:-1}paint(id)};h.onclick=go;h.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}}});
+  const cnt=st.el.querySelector('.cnt');cnt.textContent=`${r.length.toLocaleString()} แถว`;
+  const ex=st.el.querySelector('[data-a=exp]'),sc=st.el.querySelector('.sc'),more=r.length>ROWS_VIS;
+  ex.hidden=!more;ex.textContent=st.open?'⤡ ย่อตาราง':`⤢ ขยายดูทั้งหมด (${r.length.toLocaleString()} แถว)`;sc.classList.toggle('open',st.open&&more);
+}
+async function saveFile(name,data){
+  try{const dl=await claude.use('downloads');if(!dl){flash('ไม่สามารถดาวน์โหลดในมุมมองนี้');return}await dl.save({filename:name,data});}
+  catch(e){if(e&&e.code!=='declined')flash('ดาวน์โหลดไม่สำเร็จ ('+(e.code||'error')+')')}
+}
+function flash(m){const d=document.createElement('div');d.textContent=m;d.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;z-index:60;font-size:13px';document.body.appendChild(d);setTimeout(()=>d.remove(),2800)}
+const csvEsc=v=>{v=v==null?'':String(v);return/[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+function dsToAOA(ds,id){const cols=vcols(ds.cols,id);return[cols.map(c=>c.l),...ds.rows.map(r=>cols.map(c=>expVal(c,r[c.k])))]}
+function saveCSV(id){const ds=TB[id].ds;saveFile(`${id}_${D.asof}.csv`,'﻿'+dsToAOA(ds,id).map(r=>r.map(csvEsc).join(',')).join('\n'))}
+
+/* ---------- datasets ---------- */
+const cShop=[{k:'code',l:'Code',t:'s'},{k:'name',l:'Shop',t:'s',cls:'nm'},{k:'rg',l:'Region',t:'s'},{k:'ar',l:'Area',t:'s'},{k:'ty',l:'Type',t:'s'},{k:'sz',l:'Size',t:'s'},{k:'am',l:'AM',t:'s'}];
+const cMet=[{k:'tg',l:'Target',t:'n'},{k:'act',l:'Actual',t:'n'},{k:'qty',l:'Qty',t:'n'},{k:'ach',l:'%Ach',t:'p',st:'ach'},{k:'rr',l:'Runrate',t:'n'},{k:'rrach',l:'RR %Ach',t:'p',st:'rr'},{k:'gap',l:'GAP to Target',t:'n'},{k:'mom',l:'MOM %',t:'g'}];
+const dsRegion=()=>({cols:[{k:'name',l:'Region',t:'s'},{k:'shops',l:'Shops',t:'n'},{k:'activeShops',l:'Active Shops',t:'n'},...cMet],rows:scope.regionRows,total:totalRow(scope.regionRows,{shops:scope.shops.length,activeShops:scope.shops.filter(s=>shopRec[s.i].act>0).length})});
+const dsArea=()=>({cols:[{k:'name',l:'Area',t:'s'},{k:'rg',l:'Region',t:'s'},{k:'shops',l:'Shops',t:'n'},{k:'activeShops',l:'Active Shops',t:'n'},...cMet],rows:scope.areaRows,total:totalRow(scope.areaRows,{shops:scope.shops.length,activeShops:scope.shops.filter(s=>shopRec[s.i].act>0).length})});
+const dsShop=()=>({cols:[...cShop,...cMet],rows:scope.shopRows,total:totalRow(scope.shopRows)});
+function catRows(){
+  const r=scope.rec;const totA=r.act||1;
+  return CATS.map((n,i)=>{const k=r.cat[i];const rr=k.act+(cal.wdE?k.wd/cal.wdE*cal.wdRem:0)+(cal.weE?k.we/cal.weE*cal.weRem:0);
+    return{name:n,qty:k.qty,act:k.act,share:k.act/totA,rr,pQty:k.pQty,pAct:k.pAct,pFull:k.pFull,pFullQty:k.pFullQty,momQ:growth(k.qty,k.pQty),mom:growth(k.act,k.pAct),avg:k.qty?k.act/k.qty:NaN}})
+}
+const dsCat=()=>{const rows=catRows();const t=rows.reduce((a,r)=>({qty:a.qty+r.qty,act:a.act+r.act,rr:a.rr+r.rr,pQty:a.pQty+r.pQty,pAct:a.pAct+r.pAct,pFull:a.pFull+r.pFull,pFullQty:a.pFullQty+r.pFullQty}),{qty:0,act:0,rr:0,pQty:0,pAct:0,pFull:0,pFullQty:0});
+  return{cols:[{k:'name',l:'Category',t:'s'},{k:'qty',l:'Qty',t:'n'},{k:'act',l:'Revenue',t:'n'},{k:'share',l:'Share',t:'p'},{k:'rr',l:'Runrate',t:'n'},{k:'pQty',l:'Qty เดือนก่อน (MTD)',t:'n'},{k:'pAct',l:'Rev เดือนก่อน (MTD)',t:'n'},{k:'momQ',l:'MOM Qty',t:'g'},{k:'mom',l:'MOM Rev',t:'g'},{k:'pFull',l:'Rev เดือนก่อน (เต็มเดือน)',t:'n'},{k:'avg',l:'฿/รายการ',t:'d'}],rows,
+  total:{qty:t.qty,act:t.act,share:1,rr:t.rr,pQty:t.pQty,pAct:t.pAct,momQ:growth(t.qty,t.pQty),mom:growth(t.act,t.pAct),pFull:t.pFull,avg:t.qty?t.act/t.qty:NaN}}};
+function rankDs(rows,mode,top,staff){
+  let r=rows;
+  const key=mode==='ach'&&tgOn()?'ach':'act';
+  r=[...r].sort((a,b)=>{const x=isFinite(a[key])?a[key]:-1,y=isFinite(b[key])?b[key]:-1;return top?(y-x)||(b.act-a.act):(x-y)||(b.tg-a.tg)});
+  r=r.slice(0,10).map((x,i)=>({...x,rank:i+1}));
+  const cols=staff?[{k:'rank',l:'#',t:'n'},{k:'name',l:'ชื่อ',t:'s',cls:'nm'},{k:'shop',l:'Shop',t:'s',cls:'nm'},{k:'tg',l:'Target',t:'n'},{k:'act',l:'Actual',t:'n'},{k:'ach',l:'%Ach',t:'p',st:'ach'},{k:'rrach',l:'RR %Ach',t:'p',st:'rr'}]
+   :[{k:'rank',l:'#',t:'n'},{k:'name',l:'Shop',t:'s',cls:'nm'},{k:'ar',l:'Area',t:'s'},{k:'tg',l:'Target',t:'n'},{k:'act',l:'Actual',t:'n'},{k:'ach',l:'%Ach',t:'p',st:'ach'},{k:'rrach',l:'RR %Ach',t:'p',st:'rr'}];
+  return{cols,rows:r};
+}
+function dailyData(){
+  const r=scope.rec,N=cal.N,lab=[],nov=[],oct=[],rr=[],tgt=[];
+  const aWD=cal.wdE?r.wd/cal.wdE:0,aWE=cal.weE?r.we/cal.weE:0;
+  for(let d=1;d<=31;d++){lab.push(d);
+    nov.push(d<=cal.E?r.dc[d]:null);oct.push(r.dp[d]||(d<=31?r.dp[d]:null));
+    rr.push(d===cal.E?r.dc[d]:(d>cal.E&&d<=N?(cal.we[d]?aWE:aWD):null));
+    tgt.push(d<=N?r.tg/N:null)}
+  return{lab,nov,oct,rr,tgt,aWD,aWE};
+}
+function weekly(){
+  const r=scope.rec,days=[];
+  for(let d=1;d<=31;d++)if(r.dp[d]||r.qp[d])days.push({y:PYR(),m:cal.pm,d,v:r.dp[d],q:r.qp[d]});
+  for(let d=1;d<=cal.E;d++)days.push({y:cal.Y,m:cal.cm,d,v:r.dc[d],q:r.qc[d]});
+  const wk=new Map();
+  for(const x of days){const dt=new Date(Date.UTC(x.y,x.m-1,x.d));const dow=(dt.getUTCDay()+6)%7;const st=new Date(dt-dow*864e5);const key=+st;
+    if(!wk.has(key))wk.set(key,{st,en:st,n:0,v:0,q:0});const w=wk.get(key);w.n++;w.v+=x.v;w.q+=x.q;if(dt>w.en)w.en=dt}
+  const rows=[...wk.values()].sort((a,b)=>a.st-b.st).map((w,i,a)=>{const lab=`${w.st.getUTCDate()} ${TH_M[w.st.getUTCMonth()]} – ${new Date(+w.st+6*864e5).getUTCDate()} ${TH_M[new Date(+w.st+6*864e5).getUTCMonth()]}`;
+    return{week:lab+(w.n<7?' *':''),days:w.n,act:w.v,qty:w.q,avg:w.v/w.n,wow:i?growth(w.v/w.n,a[i-1].v/a[i-1].n):NaN}});
+  return rows;
+}
+function trendDs(){
+  const r=scope.rec,dd=dailyData();
+  if(UI.tr==='daily'){
+    const rows=[];let cn=0,co=0;
+    for(let d=1;d<=cal.E;d++){rows.push({d,dt:`${d} ${TH_M[cal.cm-1]}`,dow:DOWN[new Date(Date.UTC(cal.Y,cal.cm-1,d)).getUTCDay()],qty:r.qc[d],act:r.dc[d],pQty:r.qp[d],pAct:r.dp[d],dif:growth(r.dc[d],r.dp[d])})}
+    return{id:'Trend_Daily',cols:[{k:'dt',l:'วันที่',t:'s'},{k:'dow',l:'วัน',t:'s'},{k:'qty',l:'Qty',t:'n'},{k:'act',l:'Revenue',t:'n'},{k:'pQty',l:'Qty (เดือนก่อน วันที่เดียวกัน)',t:'n'},{k:'pAct',l:'Revenue (เดือนก่อน วันที่เดียวกัน)',t:'n'},{k:'dif',l:'เทียบเดือนก่อน',t:'g'}],rows,sort:'d',dir:1,keep:true}
+  }
+  if(UI.tr==='wow'){return{id:'Trend_WoW',cols:[{k:'week',l:'สัปดาห์ (จ–อา)',t:'s'},{k:'days',l:'จำนวนวัน',t:'n'},{k:'qty',l:'Qty',t:'n'},{k:'act',l:'Revenue',t:'n'},{k:'avg',l:UM()+'/วัน',t:'n'},{k:'wow',l:'WoW (฿/วัน)',t:'g'}],rows:weekly()}}
+  if(UI.tr==='mtd'){
+    const rows=[];let cn=0,co=0;for(let d=1;d<=cal.E;d++){cn+=r.dc[d];co+=r.dp[d];const tp=r.tg*d/cal.N;rows.push({d:`วันที่ ${d}`,cn,co,tp,dif:growth(cn,co),vt:ratio(cn,tp)})}
+    return{id:'Trend_MTD',cols:[{k:'d',l:'ถึงวันที่',t:'s'},{k:'cn',l:'MTD เดือนนี้',t:'n'},{k:'co',l:'MTD เดือนก่อน',t:'n'},{k:'tp',l:'เป้าตามสัดส่วนวัน',t:'n'},{k:'dif',l:'เทียบเดือนก่อน',t:'g'},{k:'vt',l:'เทียบเป้าตามสัดส่วน',t:'p',st:'rr'}],rows,keep:true}
+  }
+  const rows=[{name:'รวม',pFull:r.pFull,pAct:r.pAct,act:r.act,rr:scope.rr}].concat(catRows().map(c=>({name:c.name,pFull:c.pFull,pAct:c.pAct,act:c.act,rr:c.rr})))
+    .map(x=>({...x,mom:growth(x.act,x.pAct),rrm:growth(x.rr,x.pFull)}));
+  return{id:'Trend_MOM',cols:[{k:'name',l:'หมวด',t:'s'},{k:'pFull',l:'เดือนก่อน (เต็มเดือน)',t:'n'},{k:'pAct',l:'เดือนก่อน (MTD)',t:'n'},{k:'act',l:'เดือนนี้ (MTD)',t:'n'},{k:'mom',l:'MOM MTD',t:'g'},{k:'rr',l:'เดือนนี้ Runrate',t:'n'},{k:'rrm',l:'Runrate vs เต็มเดือนก่อน',t:'g'}],rows};
+}
+
+/* ---------- KPI ---------- */
+function kpi(l,v,s,cls=''){return`<div class="k ${cls}"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`}
+function renderKPIs(){
+  const r=scope.rec,rr=scope.rr,E=cal.E,N=cal.N,rem=N-E;
+  const ach=ratio(r.act,r.tg),rrach=ratio(rr,r.tg),pace=E/N;
+  const need=rem>0?(r.tg-r.act)/rem:0,now=r.act/E;const tgx=tgOn();
+  const aWD=cal.wdE?r.wd/cal.wdE:0,aWE=cal.weE?r.we/cal.weE:0;
+  const act=scope.shops.filter(s=>shopRec[s.i].act>0).length;
+  const sAct=scope.staff.filter(s=>staffRec[s.i].act>0).length;
+  const noS=scope.staff.filter(s=>s.tg0>0&&staffRec[s.i].act===0).length,hasT=scope.staff.filter(s=>s.tg0>0).length;
+  const mom=growth(r.act,r.pAct);const pl=(c,t)=>`<span class="pill ${c}">${t}</span>`;
+  const ac=stClass('ach',ach),rc=stClass('rr',rrach);
+  $('#kpis').innerHTML=[
+    kpi('Total Target',`${r.tg>0?f0(r.tg):'–'} <small>${UM()==='฿'?'฿':'รายการ'}</small>`,`${scope.shops.length} ร้านใน Shop list`),
+    kpi('Total Actual',`${f0(r.act)} <small>${UM()==='฿'?'฿':'รายการ'}</small>`,`${f0(r.qty)} รายการ · เฉลี่ย ${CUR()}${f0(now)}/วัน`,'hero'),
+    kpi('Total Runrate',`${f0(rr)} <small>${UM()==='฿'?'฿':'รายการ'}</small>`,`Weekday ${CUR()}${f0(aWD)}/วัน (${cal.wdTot} วัน)<br>Weekend ${CUR()}${f0(aWE)}/วัน (${cal.weTot} วัน)`),
+    kpi('% Achievement',fp(ach),`${pl(ac,ac==='good'?'ตามแผน':ac==='warn'?'ช้ากว่าแผน':'ต่ำกว่าแผนมาก')} เวลาผ่านไป ${fp(pace)} (${E}/${N} วัน)`),
+    kpi('RR % Achievement',fp(rrach),`${pl(rc,rc==='good'?'ถึงเป้า':rc==='warn'?'ใกล้เป้า':'ไม่ถึงเป้า')} คาดสิ้นเดือน ${CUR()}${f0(rr)}`),
+    kpi('GAP to Target',`${r.tg>0?f0(r.tg-r.act):'–'} <small>${UM()==='฿'?'฿':'รายการ'}</small>`,tgx&&rem>0?`ต้องทำ ${CUR()}${f0(need)}/วัน ใน ${rem} วันที่เหลือ (ตอนนี้ ${CUR()}${f0(now)}/วัน, ${isFinite(need/now)?(need/now).toFixed(1):'–'} เท่า)`:(tgx?'ครบเดือนแล้ว':'ไม่มีเป้าหมายในมุมมอง/เดือนนี้ (เป้ามีเฉพาะเดือนล่าสุด หน่วย ฿)')),
+    kpi('MOM Growth',`<span class="${isFinite(mom)?(mom>=0?'good':'crit'):''}">${fg(mom)}</span>`,`MTD 1–${E}: ${CUR()}${f0(r.act)} vs ${CUR()}${f0(r.pAct)}<br>Runrate vs เดือนก่อนเต็มเดือน ${fg(growth(rr,r.pFull))}`),
+    kpi('Active Shops',`${f0(act)} <small>/ ${f0(scope.shops.length)}</small>`,`${fp(ratio(act,scope.shops.length))} ของร้านมียอดขาย · ไม่มียอด ${scope.shops.length-act} ร้าน`),
+    kpi('Active Staff',`${f0(sAct)} <small>/ ${f0(scope.staff.length)}</small>`,`${fp(ratio(sAct,scope.staff.length))} ของพนักงานมียอดขาย`),
+    kpi('No Sale Staff',`<span class="${noS?'crit':'good'}">${f0(noS)}</span> <small>/ ${f0(hasT)}</small>`,`พนักงานที่มีเป้าแต่ยังไม่มียอด (${fp(ratio(noS,hasT))})`)
+  ].join('');
+}
+
+/* ---------- insights ---------- */
+function buildInsights(){
+  const r=scope.rec,rr=scope.rr,E=cal.E,N=cal.N,rem=N-E,I=[],R=[];
+  const ach=ratio(r.act,r.tg),rrach=ratio(rr,r.tg),pace=E/N,now=r.act/E,need=rem>0?(r.tg-r.act)/rem:0;
+  const lv=(c)=>({good:'ดี',warn:'เฝ้าระวัง',crit:'ต้องแก้ไข',info:'ข้อสังเกต'}[c]);
+  const add=(c,t,b)=>I.push({c,t,b});
+  if(!(r.tg>0)){add('info','ไม่แสดงเป้าหมาย',UI.metric==='qty'?'มุมมอง QTY ไม่มีเป้า (เป้าหมายกำหนดเป็นมูลค่า ฿) จึงแสดงเฉพาะจำนวนขาย':'เป้าหมายมีเฉพาะเดือนล่าสุดในไฟล์ข้อมูล หรือตัวกรองปัจจุบันไม่มีเป้า จึงแสดงเฉพาะยอดขาย');}
+  else{
+    add(stClass('ach',ach),'ความคืบหน้าเทียบเวลา',`ผ่านไป ${fp(pace)} ของเดือน แต่ทำได้ ${fp(ach)} ของเป้า (${CUR()}${f0(r.act)} จาก ${CUR()}${f0(r.tg)})`);
+    add(stClass('rr',rrach),'Runrate สิ้นเดือน',`ด้วยจังหวะขายปัจจุบัน (วันธรรมดา ${CUR()}${f0(cal.wdE?r.wd/cal.wdE:0)}/วัน, เสาร์–อาทิตย์ ${CUR()}${f0(cal.weE?r.we/cal.weE:0)}/วัน) คาดปิดที่ ${CUR()}${f0(rr)} = ${fp(rrach)} ของเป้า ขาดอีก ${CUR()}${f0(Math.max(0,r.tg-rr))}`);
+    if(r.pFull>0)add(r.pFull/r.tg<.6?'crit':'info','ความสมเหตุสมผลของเป้าหมาย',`ยอดจริงเดือนก่อนทั้งเดือน ${CUR()}${f0(r.pFull)} เท่ากับ ${fp(r.pFull/r.tg)} ของเป้าเดือนนี้ เป้าสูงกว่าผลงานย้อนหลังประมาณ ${(r.tg/r.pFull).toFixed(1)} เท่า ควรยืนยันหน่วยและฐานของเป้ากับทีมวางแผน`);
+    add(need/now>2?'crit':need/now>1.2?'warn':'good','ความเร่งที่ต้องใช้',`ต้องขายเฉลี่ย ${CUR()}${f0(need)}/วัน ในอีก ${rem} วัน เทียบกับปัจจุบัน ${CUR()}${f0(now)}/วัน (${isFinite(need/now)?(need/now).toFixed(1):'–'} เท่า)`);
+  }
+  const mom=growth(r.act,r.pAct);
+  if(isFinite(mom))add(mom>=0.05?'good':mom<=-0.05?'crit':'warn','MOM Growth (MTD)',`1–${E} ${TH_M[cal.cm-1]} ทำได้ ${CUR()}${f0(r.act)} เทียบ ${TH_M[cal.pm-1]} ช่วงเดียวกัน ${CUR()}${f0(r.pAct)} (${fg(mom)}) จำนวนรายการ ${fg(growth(r.qty,r.pQty))}`);
+  const wdA=cal.wdE?r.wd/cal.wdE:0,weA=cal.weE?r.we/cal.weE:0;
+  if(wdA>0)add('info','Weekday vs Weekend',`เสาร์–อาทิตย์เฉลี่ย ${CUR()}${f0(weA)}/วัน ${weA>=wdA?'สูงกว่า':'ต่ำกว่า'}วันธรรมดา ${fp(Math.abs(weA/wdA-1))}`);
+  const dd=dailyData();let mx=0,md=0;for(let d=1;d<=E;d++)if(r.dc[d]>mx){mx=r.dc[d];md=d}
+  if(E>2&&mx>1.25*now)add('info','วันที่ยอดสูงสุด',`วันที่ ${md} ${TH_M[cal.cm-1]} ทำได้ ${CUR()}${f0(mx)} สูงกว่าค่าเฉลี่ยรายวัน ${fp(mx/now-1,0)} ควรตรวจว่าเกิดจากแคมเปญหรือยอดสะสมต้นเดือน เพราะค่า Runrate อาจถูกดึงขึ้น`);
+  const cr=catRows().filter(c=>c.act>0||c.pAct>0);
+  if(cr.length){const top=[...cr].sort((a,b)=>b.act-a.act)[0];const g=[...cr].filter(c=>isFinite(c.mom)).sort((a,b)=>a.mom-b.mom);
+    add('info','โครงสร้างยอดขายตามหมวด',`${top.name} สัดส่วนสูงสุด ${fp(top.share)} ของยอด`+(g.length>1?` · โตดีสุด ${g[g.length-1].name} (${fg(g[g.length-1].mom)}) · อ่อนสุด ${g[0].name} (${fg(g[0].mom)})`:''));}
+  const ar=scope.areaRows.filter(a=>a.tg>0);
+  if(ar.length>1){const byG=[...ar].sort((a,b)=>(b.tg-b.rr)-(a.tg-a.rr));const byR=[...ar].sort((a,b)=>b.rrach-a.rrach);
+    add('warn','Area ที่ขาดเป้ามากที่สุด',`${byG.slice(0,3).map(a=>`${a.name} (ขาด ${CUR()}${f0(a.tg-a.rr)}, RR ${fp(a.rrach)})`).join(' · ')}`);
+    add('good','Area ที่ทำได้ดีที่สุด (RR %Ach)',`${byR.slice(0,3).map(a=>`${a.name} ${fp(a.rrach)}`).join(' · ')}`);}
+  const sr=scope.shopRows,zero=sr.filter(s=>s.act===0),zt=zero.filter(s=>s.tg>0);
+  const top10=[...sr].sort((a,b)=>b.act-a.act).slice(0,10).reduce((a,s)=>a+s.act,0);
+  add(zero.length/Math.max(sr.length,1)>.3?'crit':'warn','ร้านที่ยังไม่มียอด',`${zero.length} ร้านจาก ${sr.length} (${fp(zero.length/Math.max(sr.length,1),0)}) ยังไม่มียอดเดือนนี้ ในนั้น ${zt.length} ร้านมีเป้า (รวมเป้า ${CUR()}${f0(zt.reduce((a,s)=>a+s.tg,0))})`);
+  if(r.act>0)add(top10/r.act>.4?'warn':'info','การกระจุกตัวของยอด',`10 ร้านแรกสร้างยอด ${fp(top10/r.act,0)} ของทั้งหมด`);
+  const low=sr.filter(s=>s.tg>0&&s.rrach<.25&&s.act>0).length;
+  if(low)add('warn','ร้านที่ Runrate ต่ำกว่า 25% ของเป้า',`${low} ร้านมียอดบ้างแต่คาดว่าจะต่ำกว่า 25% ของเป้า`);
+  const sf=scope.staffRows,hasT=sf.filter(s=>s.tg0>0),noS=hasT.filter(s=>s.act===0),lost=noS.filter(s=>s.pFull>0);
+  add(hasT.length&&noS.length/hasT.length>.4?'crit':'warn','พนักงานที่ยังไม่มียอด',`${noS.length} จาก ${hasT.length} คนที่มีเป้า (${fp(ratio(noS.length,hasT.length),0)}) ไม่มียอดเดือนนี้ โดย ${lost.length} คนเคยขายได้เดือนก่อน`);
+  const ts=[...sf].sort((a,b)=>b.act-a.act);const t10=ts.slice(0,Math.max(1,Math.round(ts.length*.1))).reduce((a,s)=>a+s.act,0);
+  const sTot=sf.reduce((a,s)=>a+s.act,0);
+  if(sTot>0)add('info','การกระจุกตัวของพนักงาน',`พนักงาน 10% แรก (${Math.max(1,Math.round(ts.length*.1))} คน) สร้างยอด ${fp(t10/sTot,0)} ของยอดที่ระบุตัวพนักงานได้ · ยอดที่ไม่ผูกกับพนักงานในรายชื่อ ${CUR()}${f0(r.act-sTot)} (${fp(ratio(r.act-sTot,r.act),0)})`);
+  // recs
+  if(r.tg>0){
+    R.push(`<b>ทบทวนเป้าหมายก่อน:</b> เป้า ${CUR()}${f0(r.tg)} เทียบยอดเดือนก่อน ${CUR()}${f0(r.pFull)} และ Runrate ${CUR()}${f0(rr)} ควรยืนยันกับทีมวางแผนว่าเป้าเป็นหน่วยเดียวกับ NET_RC และกำหนดเป้าที่ทำได้จริงเป็นเกณฑ์ใช้งานควบคู่กับเป้าเดิม`);
+    R.push(`<b>เร่งยอดรายวัน:</b> ต้องเพิ่มจาก ${CUR()}${f0(now)} เป็น ${CUR()}${f0(need)} ต่อวันเพื่อถึงเป้า ตั้งเป้ารายวันรายร้านและติดตามทุกเช้า โดยเน้นวันเสาร์–อาทิตย์ซึ่งมีอีก ${cal.weRem} วัน`);}
+  if(zt.length)R.push(`<b>ปลุกร้านที่ยังไม่มียอด ${zt.length} ร้าน:</b> ให้ AM/FC ลงพื้นที่หรือโทรประสานภายใน 2–3 วัน เริ่มจากร้านที่เป้าสูงสุด: ${[...zt].sort((a,b)=>b.tg-a.tg).slice(0,3).map(s=>s.name).join(', ')}`);
+  if(ar.length>1)R.push(`<b>จัดลำดับ Area:</b> โฟกัส ${[...ar].sort((a,b)=>(b.tg-b.rr)-(a.tg-a.rr)).slice(0,2).map(a=>a.name).join(' และ ')} เพราะเป็นส่วนที่ขาดเป้าเป็นมูลค่าสูงสุด และนำแนวปฏิบัติจาก ${[...ar].sort((a,b)=>b.rrach-a.rrach)[0].name} ไปขยาย`);
+  if(noS.length)R.push(`<b>Coaching พนักงานไม่มียอด ${noS.length} คน:</b> เริ่มจาก ${lost.length} คนที่เคยขายเดือนก่อน (ตรวจเรื่องลางาน ย้ายร้าน หรือสิทธิ์ระบบ) แล้วจับคู่กับพนักงานยอดสูง`);
+  if(cr.length>1){const g=[...cr].filter(c=>isFinite(c.mom)).sort((a,b)=>a.mom-b.mom)[0];if(g&&g.mom<0)R.push(`<b>กระตุ้นหมวด ${g.name}:</b> ยอดลดลง ${fp(Math.abs(g.mom))} เทียบช่วงเดียวกันเดือนก่อน ควรตรวจโปรโมชันและ Talking point ในร้าน`)}
+  R.push(`<b>ตรวจคุณภาพข้อมูล:</b> ยอดขายที่ไม่ผูกกับพนักงานในรายชื่อ ${fp(ratio(r.act-sTot,r.act),0)} ควรเพิ่มรหัสพนักงานให้ครบเพื่อให้ Leaderboard ถูกต้อง`);
+  $('#insights').innerHTML=I.map(x=>`<div class="in"><h3><span class="pill ${x.c}">${lv(x.c)}</span>${esc(x.t)}</h3><p>${esc(x.b)}</p></div>`).join('');
+  $('#recs').innerHTML=R.map(x=>`<li>${x}</li>`).join('');
+  scope.ins=I;scope.recs=R.map(x=>x.replace(/<[^>]+>/g,''));
+}
+
+/* ---------- charts ---------- */
+const cv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const valLabels={id:'vl',afterDatasetsDraw(ch,_a,o){if(!o||!o.on)return;const c=ch.ctx;c.save();c.fillStyle=cv('--ink');c.font='600 12px '+cv('--font');c.textAlign='center';
+  ch.data.datasets.forEach((ds,i)=>{ch.getDatasetMeta(i).data.forEach((b,j)=>{const v=ds.data[j];if(v==null)return;c.fillText(o.fmt?o.fmt(v):f0(v),b.x,b.y-6)})});c.restore()}};
+const pieLabels={id:'pieLabels',afterDatasetsDraw(ch){if(ch.config.type!=='pie')return;const c=ch.ctx,ds=ch.data.datasets[0],tot=ds.data.reduce((a,b)=>a+b,0);if(!tot)return;c.save();c.fillStyle='#fff';c.font='700 12px '+cv('--font');c.textAlign='center';c.textBaseline='middle';
+  ch.getDatasetMeta(0).data.forEach((a,i)=>{const sh=ds.data[i]/tot;if(sh<.05)return;const p=a.tooltipPosition();c.fillText((sh*100).toFixed(0)+'%',p.x,p.y)});c.restore()}};
+function renderPie(){
+  const cr=catRows(),tot=cr.reduce((a,x)=>a+x.act,0),Q=UI.metric==='qty';
+  const cols=[cv('--s1'),cv('--s2'),cv('--s3'),cv('--s4'),cv('--s5')];
+  $('#pieSub').textContent=`${Q?'จำนวนรายการ':'ยอดขาย ฿'} · ${TH_M[cal.cm-1]}`;
+  if(!tot){if(charts.chPie){charts.chPie.destroy();delete charts.chPie}$('#pieNote').textContent='ไม่มียอดขายในขอบเขตที่เลือก';return}
+  $('#pieNote').textContent=cr.map(x=>`${x.name} ${CUR()}${f0(x.act)}`).join(' · ');
+  mk('chPie',{type:'pie',data:{labels:cr.map(x=>`${x.name} · ${fp(x.share)}`),datasets:[{data:cr.map(x=>x.act),backgroundColor:cols,borderColor:cv('--surface'),borderWidth:2}]},
+    options:{interaction:{mode:'nearest',intersect:true},plugins:{legend:{position:'bottom',labels:{boxWidth:10,boxHeight:10,usePointStyle:true,color:cv('--ink2')}},tooltip:{callbacks:{label:c=>` ${CATS[c.dataIndex]}: ${CUR()}${f0(c.raw)} (${fp(c.raw/tot)})`}}}},plugins:[pieLabels]});
+}
+function mk(id,cfg){
+  if(charts[id]){charts[id].destroy();delete charts[id]}
+  if(!document.getElementById(id).offsetParent)return;
+  const ink=cv('--ink2'),grid=cv('--grid');
+  Chart.defaults.font.family=cv('--font');Chart.defaults.font.size=12;Chart.defaults.color=ink;
+  cfg.options=Object.assign({responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},animation:false},cfg.options||{});
+  const sc=cfg.options.scales=cfg.options.scales||{};
+  if(cfg.type!=='pie')for(const a of ['x','y']){sc[a]=Object.assign({grid:{color:a===(cfg.options.indexAxis==='y'?'x':'y')?grid:'transparent',drawTicks:false},border:{display:false},ticks:{color:ink}},sc[a]||{})}
+  cfg.options.plugins=Object.assign({legend:{position:'bottom',labels:{boxWidth:10,boxHeight:10,usePointStyle:true,color:ink}},tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${c.raw==null?'–':(c.dataset.pct?fp(c.raw/100):f0(c.raw))}`}}},cfg.options.plugins||{});
+  cfg.plugins=[valLabels,...(cfg.plugins||[])];
+  if(cfg.type==='pie')delete cfg.options.scales;
+  charts[id]=new Chart(document.getElementById(id),cfg);
+}
+const bar=(label,data,color,extra={})=>({type:'bar',label,data,backgroundColor:color,borderRadius:4,borderSkipped:false,maxBarThickness:34,...extra});
+const line=(label,data,color,extra={})=>({type:'line',label,data,borderColor:color,backgroundColor:color,borderWidth:2,pointRadius:0,pointHoverRadius:4,tension:.2,spanGaps:false,...extra});
+function renderCharts(){
+  if(!scope)return;
+  const s1=cv('--s1'),s2=cv('--s2'),s3=cv('--s3'),s4=cv('--s4'),base=cv('--base'),tgt=cv('--tgt'),wk=cv('--wk');
+  const r=scope.rec,dd=dailyData(),TG=tgOn(),Q=UI.metric==='qty';
+  $('#dailySub').textContent=`เดือนนี้ เทียบเดือนที่แล้ว (${Q?'จำนวนรายการ':'฿'} ต่อวัน)`;
+  $('#tvaT').textContent=TG?'Target vs Actual vs Runrate':'Actual vs Runrate';
+  mk('chDaily',{type:'line',data:{labels:dd.lab,datasets:[line(`${TH_M[cal.cm-1]} (จริง)`,dd.nov,s1,{borderWidth:2.5,pointRadius:3}),line(`${TH_M[cal.cm-1]} Runrate`,dd.rr,s2,{borderDash:[6,4]}),line(`${TH_M[cal.pm-1]}`,dd.oct,base),...(TG?[line('เป้า/วัน (เฉลี่ย)',dd.tgt,tgt,{borderDash:[2,4],borderWidth:1.5})]:[])]},options:{scales:{x:{title:{display:true,text:'วันที่',color:cv('--muted')}},y:{beginAtZero:true,ticks:{callback:v=>f0(v)}}}}});
+  $('#dailyNote').textContent=`Runrate รายวัน = ค่าเฉลี่ยวันธรรมดา ${CUR()}${f0(dd.aWD)} / เสาร์–อาทิตย์ ${CUR()}${f0(dd.aWE)} คูณวันที่เหลือ`;
+  mk('chTVA',{type:'bar',data:{labels:TG?['Target','Actual','Runrate']:['Actual','Runrate'],datasets:[{type:'bar',label:Q?'Qty':'฿',data:TG?[r.tg,r.act,scope.rr]:[r.act,scope.rr],backgroundColor:TG?[tgt,s1,s2]:[s1,s2],borderRadius:6,borderSkipped:false,maxBarThickness:70}]},options:{plugins:{legend:{display:false},vl:{on:true},tooltip:{callbacks:{label:c=>` ${CUR()}${f0(c.raw)}${TG&&c.dataIndex?` (${fp(ratio(c.raw,r.tg))} ของเป้า)`:''}`}}},scales:{y:{beginAtZero:true,grace:'12%',ticks:{callback:v=>f0(v)}}}}});
+  const rg=scope.regionRows;
+  mk('chRegion',{type:'bar',data:{labels:rg.map(x=>x.name),datasets:[...(TG?[bar('Target',rg.map(x=>x.tg),tgt)]:[]),bar('Actual',rg.map(x=>x.act),s1),bar('Runrate',rg.map(x=>x.rr),s2)]},options:{scales:{y:{beginAtZero:true,ticks:{callback:v=>f0(v)}}}}});
+  const ar=[...scope.areaRows].sort((a,b)=>(b.rrach||0)-(a.rrach||0));
+  if(TG)mk('chArea',{type:'bar',data:{labels:ar.map(x=>x.name),datasets:[bar('% Achievement',ar.map(x=>isFinite(x.ach)?x.ach*100:null),s1,{pct:true}),bar('RR % Achievement',ar.map(x=>isFinite(x.rrach)?x.rrach*100:null),s2,{pct:true})]},options:{indexAxis:'y',scales:{x:{beginAtZero:true,ticks:{callback:v=>v+'%'}},y:{grid:{color:'transparent'}}}}});
+  else{const ar2=[...scope.areaRows].sort((a,b)=>b.act-a.act);mk('chArea',{type:'bar',data:{labels:ar2.map(x=>x.name),datasets:[bar('Actual',ar2.map(x=>x.act),s1),bar('Runrate',ar2.map(x=>x.rr),s2)]},options:{indexAxis:'y',scales:{x:{beginAtZero:true,ticks:{callback:v=>f0(v)}},y:{grid:{color:'transparent'}}}}})}
+  $('#areaSub').textContent=TG?'% Achievement และ % Runrate':(Q?'จำนวนรายการ (Actual / Runrate)':'ยอดขาย Actual / Runrate');
+  const sr=scope.shopRows;
+  const selA=sr.filter(x=>x.act>0),avgA=selA.length?selA.reduce((a,x)=>a+x.act,0)/selA.length:0;
+  const bands=TG?[['ไม่มียอด',x=>x.act===0],['< 25%',x=>x.act>0&&x.rrach<.25],['25–50%',x=>x.rrach>=.25&&x.rrach<.5],['50–75%',x=>x.rrach>=.5&&x.rrach<.75],['75–100%',x=>x.rrach>=.75&&x.rrach<1],['≥ 100%',x=>x.rrach>=1]]
+   :[['ไม่มียอด',x=>x.act===0],['< 50% ของเฉลี่ย',x=>x.act>0&&x.act<avgA*.5],['50–100%',x=>x.act>=avgA*.5&&x.act<avgA],['100–150%',x=>x.act>=avgA&&x.act<avgA*1.5],['150–200%',x=>x.act>=avgA*1.5&&x.act<avgA*2],['≥ 200%',x=>x.act>=avgA*2]];
+  $('#bandSub').textContent=TG?'จำนวนร้านตามช่วง RR %Ach':'จำนวนร้านตามยอดเทียบค่าเฉลี่ยร้านที่มียอด';
+  mk('chShopBand',{type:'bar',data:{labels:bands.map(b=>b[0]),datasets:[{type:'bar',label:'จำนวนร้าน',data:bands.map(b=>sr.filter(x=>b[1](x)).length),backgroundColor:[cv('--crit'),s2,s4,s1,s3,cv('--good')],borderRadius:5,borderSkipped:false,maxBarThickness:46}]},options:{plugins:{legend:{display:false},vl:{on:true}},scales:{y:{beginAtZero:true,grace:'12%'}}}});
+  const cr=catRows();
+  mk('chCat',{type:'bar',data:{labels:CATS,datasets:[bar(`${TH_M[cal.pm-1]} MTD`,cr.map(c=>c.pAct),base),bar(`${TH_M[cal.cm-1]} MTD`,cr.map(c=>c.act),s1),bar(`${TH_M[cal.cm-1]} Runrate`,cr.map(c=>c.rr),s2)]},options:{scales:{y:{beginAtZero:true,ticks:{callback:v=>f0(v)}}}}});
+  renderStaffCharts();
+  const cr2=D.camps?dsCamp().rows.filter(x=>x.qty>0||x.pq>0).slice(0,10):[];
+  const sh=n=>n.length>40?n.slice(0,38)+'…':n;
+  mk('chCamp',{type:'bar',data:{labels:cr2.map(x=>sh(x.name)),datasets:[bar(`${TH_M[cal.pm-1]} MTD`,cr2.map(x=>Q?x.pq:x.pv),base),bar(`${TH_M[cal.cm-1]} MTD`,cr2.map(x=>Q?x.qty:x.rev),s1)]},options:{indexAxis:'y',scales:{x:{beginAtZero:true,ticks:{callback:v=>f0(v)}},y:{grid:{color:'transparent'}}},plugins:{tooltip:{callbacks:{title:i=>cr2[i[0].dataIndex]?.name,label:c=>` ${c.dataset.label}: ${f0(c.raw)} ${Q?'รายการ':'฿'}`}}}}});
+  renderPie();renderRQ();renderTrend();
+}
+function renderRQ(){
+  const s1=cv('--s1'),base=cv('--base'),oc=cv('--wk');
+  let labs,get;
+  if(UI.rq==='cat'){const c=catRows();labs=CATS;get=i=>{const k=scope.rec.cat[i];return{a:k.rv,pa:k.pRv,pf:k.pFv,q:k.qty,pq:k.pQty,pfq:k.pFullQty}}}
+  else{const rows=UI.rq==='rg'?scope.regionRows:[...scope.areaRows].sort((a,b)=>b.act-a.act);labs=rows.map(x=>x.name);get=i=>{const x=rows[i].rec;return{a:x.rv,pa:x.pRv,pf:x.pFv,q:x.qty,pq:x.pQty,pfq:x.pFullQty}}}
+  const ix=labs.map((_,i)=>get(i)),horiz=labs.length>6;
+  const o=()=>{const q={indexAxis:horiz?'y':'x',scales:{[horiz?'x':'y']:{beginAtZero:true,ticks:{callback:v=>f0(v)}}}};if(horiz)q.scales.y={grid:{color:'transparent'}};return q};
+  $('#rqSub').textContent=`${TH_M[cal.cm-1]} ${cal.E<cal.N?'MTD':'ทั้งเดือน'} เทียบ ${TH_M[cal.pm-1]} ช่วงเดียวกัน และ ${TH_M[cal.pm-1]} เต็มเดือน (แสดงทั้ง Revenue และ Quantity เสมอ)`;
+  mk('chRev',{type:'bar',data:{labels:labs,datasets:[bar(`${TH_M[cal.pm-1]} เต็มเดือน`,ix.map(x=>x.pf),oc),bar(`${TH_M[cal.pm-1]} MTD`,ix.map(x=>x.pa),base),bar(`${TH_M[cal.cm-1]} MTD`,ix.map(x=>x.a),s1)]},options:o()});
+  mk('chQty',{type:'bar',data:{labels:labs,datasets:[bar(`${TH_M[cal.pm-1]} เต็มเดือน`,ix.map(x=>x.pfq),oc),bar(`${TH_M[cal.pm-1]} MTD`,ix.map(x=>x.pq),base),bar(`${TH_M[cal.cm-1]} MTD`,ix.map(x=>x.q),s1)]},options:o()});
+}
+function renderTrend(){
+  const s1=cv('--s1'),s2=cv('--s2'),base=cv('--base'),tgt=cv('--tgt'),wk=cv('--wk'),r=scope.rec,dd=dailyData();
+  const ds=trendDs();let note='';
+  if(UI.tr==='daily'){
+    const lab=[],wd=[],we=[];for(let d=1;d<=cal.E;d++){lab.push(`${d} ${DOWN[new Date(Date.UTC(cal.Y,cal.cm-1,d)).getUTCDay()]}`);wd.push(cal.we[d]?null:r.dc[d]);we.push(cal.we[d]?r.dc[d]:null)}
+    mk('chTrend',{type:'bar',data:{labels:lab,datasets:[bar('วันธรรมดา',wd,s1,{stack:'a'}),bar('เสาร์–อาทิตย์',we,s2,{stack:'a'}),line(`${TH_M[cal.pm-1]} วันที่เดียวกัน`,Array.from({length:cal.E},(_,i)=>r.dp[i+1]),base,{type:'line'})]},options:{scales:{y:{beginAtZero:true,ticks:{callback:v=>f0(v)}}}}});
+    note='ยอดขายรายวันของเดือนปัจจุบัน แยกสีวันธรรมดา/เสาร์–อาทิตย์ พร้อมเส้นเดือนก่อนวันที่เดียวกัน';
+  }else if(UI.tr==='wow'){
+    const w=weekly();
+    mk('chTrend',{type:'bar',data:{labels:w.map(x=>x.week),datasets:[bar(UM()+' เฉลี่ยต่อวัน',w.map(x=>x.avg),s1)]},options:{plugins:{legend:{display:false},vl:{on:true}},scales:{y:{beginAtZero:true,grace:'12%',ticks:{callback:v=>f0(v)}}}}});
+    note='WoW เทียบยอดเฉลี่ยต่อวัน เพราะสัปดาห์ที่มี * มีข้อมูลไม่ครบ 7 วัน (สัปดาห์แรกของข้อมูล หรือสัปดาห์ปัจจุบัน)';
+  }else if(UI.tr==='mtd'){
+    const lab=[],cn=[],co=[],tp=[],pr=[];let a=0,b=0;
+    for(let d=1;d<=cal.N;d++){lab.push(d);if(d<=cal.E){a+=r.dc[d];cn.push(a)}else cn.push(null);b+=r.dp[d];co.push(b);tp.push(r.tg*d/cal.N);
+      if(d>=cal.E){if(d===cal.E)pr.push(a);else{pr.push(pr[pr.length-1]+(cal.we[d]?dd.aWE:dd.aWD))}}else pr.push(null)}
+    mk('chTrend',{type:'line',data:{labels:lab,datasets:[line(`${TH_M[cal.cm-1]} สะสม`,cn,s1,{borderWidth:2.5}),line(`${TH_M[cal.cm-1]} Runrate สะสม`,pr,s2,{borderDash:[6,4]}),line(`${TH_M[cal.pm-1]} สะสม`,co,base),...(tgOn()?[line('เป้าตามสัดส่วนวัน',tp,tgt,{borderDash:[2,4],borderWidth:1.5})]:[])]},options:{scales:{x:{title:{display:true,text:'วันที่',color:cv('--muted')}},y:{beginAtZero:true,ticks:{callback:v=>f0(v)}}}}});
+    note='ยอดสะสมตั้งแต่ต้นเดือน เทียบเดือนก่อน เป้าตามสัดส่วนวัน และ Runrate';
+  }else{
+    const rows=ds.rows;
+    mk('chTrend',{type:'bar',data:{labels:rows.map(x=>x.name),datasets:[bar(`${TH_M[cal.pm-1]} เต็มเดือน`,rows.map(x=>x.pFull),wk),bar(`${TH_M[cal.pm-1]} MTD`,rows.map(x=>x.pAct),base),bar(`${TH_M[cal.cm-1]} MTD`,rows.map(x=>x.act),s1),bar(`${TH_M[cal.cm-1]} Runrate`,rows.map(x=>x.rr),s2)]},options:{scales:{y:{beginAtZero:true,ticks:{callback:v=>f0(v)}}}}});
+    note='MOM เทียบ MTD ช่วงวันเดียวกัน และ Runrate เทียบเดือนก่อนทั้งเดือน';
+  }
+  $('#trNote').textContent=note;
+  if(TB.tTrend&&TB.tTrend.cur!==ds.id)delete TB.tTrend;
+  table('tTrend',$('#tTrend'),ds,{simple:true,sort:ds.sort,dir:ds.dir});TB.tTrend.cur=ds.id;
+}
+
+/* ---------- staff tab ---------- */
+const elig=x=>x.tg0>0||x.act>0;
+const CLS=['Above Average','Average','Below Average','No Sales'];
+function classify(){
+  const el=scope.staffRows.filter(elig),sell=el.filter(x=>x.act>0);
+  const avg=sell.length?sell.reduce((a,x)=>a+x.act,0)/sell.length:0;scope.mixAvg=avg;
+  el.forEach(x=>{x.ci=x.act===0?3:x.act>=avg*1.2?0:x.act>=avg*.8?1:2;x.cls=CLS[x.ci]});
+  scope.staffEl=el;
+}
+function mixDs(){
+  const el=scope.staffEl,g=new Map();
+  el.forEach(x=>{if(!g.has(x.ar))g.set(x.ar,{name:x.ar,rg:x.rg,head:0,c:[0,0,0,0]});const o=g.get(x.ar);o.head++;o.c[x.ci]++});
+  const mk=(o)=>({name:o.name,rg:o.rg,head:o.head,a:o.c[0],ap:ratio(o.c[0],o.head),m:o.c[1],mp:ratio(o.c[1],o.head),b:o.c[2],bp:ratio(o.c[2],o.head),n:o.c[3],np:ratio(o.c[3],o.head)});
+  const rows=[...g.values()].map(mk).sort((a,b)=>a.name.localeCompare(b.name));
+  const tot=mk({name:'รวม',rg:'',head:el.length,c:[0,1,2,3].map(i=>rows.reduce((a,r)=>a+r[['a','m','b','n'][i]],0))});
+  return{cols:[{k:'name',l:'Area',t:'s'},{k:'rg',l:'Region',t:'s'},{k:'head',l:'Staff',t:'n'},{k:'a',l:'Above Average',t:'n'},{k:'ap',l:'Above %',t:'p'},{k:'m',l:'Average',t:'n'},{k:'mp',l:'Average %',t:'p'},{k:'b',l:'Below Average',t:'n'},{k:'bp',l:'Below %',t:'p'},{k:'n',l:'No Sales',t:'n'},{k:'np',l:'No Sales %',t:'p'}],rows,total:{head:tot.head,a:tot.a,ap:tot.ap,m:tot.m,mp:tot.mp,b:tot.b,bp:tot.bp,n:tot.n,np:tot.np}};
+}
+const dsStaff=()=>({cols:[{k:'id',l:'EMP ID',t:'s'},{k:'name',l:'ชื่อ',t:'s',cls:'nm'},{k:'et',l:'EMP_TYPE',t:'s'},{k:'pos',l:'Position',t:'s'},{k:'shop',l:'Shop',t:'s',cls:'nm'},{k:'ar',l:'Area',t:'s'},{k:'ty',l:'Shop Type',t:'s'},{k:'cls',l:'ระดับผลงาน',t:'s'},...cMet],rows:scope.staffEl,total:totalRow(scope.staffEl)});
+function nsGroup(dim){
+  const g=new Map();
+  scope.staffEl.forEach(x=>{
+    const k=dim==='ar'?x.ar:dim==='ty'?x.ty:x.sc;
+    if(!g.has(k))g.set(k,{name:dim==='shop'?x.shop:(k||'(ไม่ระบุ)'),ar:x.ar,ty:x.ty,rg:x.rg,head:0,sell:0,ns:0,lost:0,act:0});
+    const o=g.get(k);o.head++;o.act+=x.act;if(x.act>0)o.sell++;else{o.ns++;if(x.pFull>0)o.lost++}
+  });
+  const tn=scope.staffEl.filter(x=>x.act===0).length;
+  return[...g.values()].map(o=>({...o,nsp:ratio(o.ns,o.head),share:ratio(o.ns,tn),perHead:o.act/o.head}));
+}
+function dsNS(dim){
+  const rows=nsGroup(dim),L={ar:'Area',ty:'Shop Type',shop:'Shop Name'}[dim];
+  const t=rows.reduce((a,r)=>({head:a.head+r.head,sell:a.sell+r.sell,ns:a.ns+r.ns,lost:a.lost+r.lost,act:a.act+r.act}),{head:0,sell:0,ns:0,lost:0,act:0});
+  return{cols:[{k:'name',l:L,t:'s',cls:'nm'},...(dim==='shop'?[{k:'ar',l:'Area',t:'s'},{k:'ty',l:'Shop Type',t:'s'}]:[]),{k:'head',l:'Staff',t:'n'},{k:'sell',l:'มียอด',t:'n'},{k:'ns',l:'No Sales',t:'n'},{k:'nsp',l:'% No Sales',t:'p'},{k:'lost',l:'No Sales ที่เคยขายเดือนก่อน',t:'n'},{k:'share',l:'สัดส่วนของ No Sales ทั้งหมด',t:'p'},{k:'act',l:'Actual',t:'n'},{k:'perHead',l:UM()+' / Staff',t:'n'}],rows,
+    total:{head:t.head,sell:t.sell,ns:t.ns,nsp:ratio(t.ns,t.head),lost:t.lost,share:t.ns?1:NaN,act:t.act,perHead:t.head?t.act/t.head:NaN}};
+}
+function dsNSTop(){
+  const rows=nsGroup('shop').filter(x=>x.ns>0).sort((a,b)=>b.ns-a.ns||b.nsp-a.nsp||b.head-a.head);let c=0;
+  rows.forEach((x,i)=>{x.rank=i+1;c+=x.share;x.cum=c});
+  return{cols:[{k:'rank',l:'#',t:'n'},{k:'name',l:'Shop',t:'s',cls:'nm'},{k:'ar',l:'Area',t:'s'},{k:'ty',l:'Shop Type',t:'s'},{k:'head',l:'Staff',t:'n'},{k:'ns',l:'No Sales',t:'n'},{k:'nsp',l:'% No Sales',t:'p'},{k:'lost',l:'เคยขายเดือนก่อน',t:'n'},{k:'share',l:'สัดส่วนของ No Sales ทั้งหมด',t:'p'},{k:'cum',l:'สะสม',t:'p'}],rows};
+}
+function avgGroup(keyF){
+  const g=new Map();
+  scope.staffEl.forEach(x=>{const k=keyF(x);if(!g.has(k))g.set(k,{first:x,l:[]});g.get(k).l.push(x)});
+  const mk=(l)=>{const head=l.length,active=l.filter(x=>x.act>0).length,act=l.reduce((a,x)=>a+x.act,0),rr=l.reduce((a,x)=>a+x.rr,0);
+    return{head,active,pa:ratio(active,head),act,rr,aHead:act/head,rHead:rr/head,rrx:ratio(rr,act),aAct:active?act/active:NaN,rAct:active?rr/active:NaN}};
+  return{rows:[...g.values()].map(o=>({first:o.first,...mk(o.l)})),all:mk(scope.staffEl)};
+}
+function avgDs(dims,keyF){
+  const {rows,all}=avgGroup(keyF);
+  const r2=rows.map(o=>{const r={...o};dims.forEach((d,i)=>r['d'+i]=o.first[d[0]]||'(ไม่ระบุ)');delete r.first;return r});
+  const cols=[...dims.map((d,i)=>({k:'d'+i,l:d[1],t:'s',cls:'nm'})),{k:'head',l:'Staff',t:'n'},{k:'active',l:'Active',t:'n'},{k:'pa',l:'% Active',t:'p'},{k:'act',l:'Actual',t:'n'},{k:'rr',l:'Runrate',t:'n'},{k:'aHead',l:'Actual / Staff',t:'n'},{k:'rHead',l:'RR / Staff',t:'n'},{k:'rrx',l:'RR ÷ Actual',t:'d'},{k:'aAct',l:'Actual / Active',t:'n'},{k:'rAct',l:'RR / Active',t:'n'}];
+  return{cols,rows:r2,total:all};
+}
+const AP=[
+ ()=>avgDs([['rg','Region'],['ty','Shop Type']],x=>x.rg+'|'+x.ty),
+ ()=>avgDs([['ar','Area'],['ty','Shop Type']],x=>x.ar+'|'+x.ty),
+ ()=>avgDs([['et','EMP_TYPE']],x=>x.et||'-'),
+ ()=>avgDs([['rg','Region']],x=>x.rg),
+ ()=>avgDs([['ar','Area'],['rg','Region']],x=>x.ar),
+ ()=>avgDs([['shop','Shop'],['ar','Area'],['ty','Shop Type']],x=>x.sc)];
+function staffInsights(){
+  const el=scope.staffEl,I=[],R=[],add=(c,t,b)=>I.push({c,t,b});
+  const n=el.length;
+  if(!n){$('#staffIns').innerHTML='<div class="in"><p>ไม่มีข้อมูลพนักงานในขอบเขตที่เลือก</p></div>';$('#staffRecs').innerHTML='';return}
+  const lv=c=>({good:'ดี',warn:'เฝ้าระวัง',crit:'ต้องแก้ไข',info:'ข้อสังเกต'}[c]);
+  const ns=el.filter(x=>x.act===0),lost=ns.filter(x=>x.pFull>0).length,nsr=ns.length/n;
+  add(nsr>.5?'crit':nsr>.3?'warn':'good','อัตราพนักงานไม่มียอด',`${f0(ns.length)} จาก ${f0(n)} คน (${fp(nsr)}) ไม่มียอดในเดือนที่เลือก โดย ${f0(lost)} คนเคยขายได้เดือนก่อน`);
+  const A=nsGroup('ar').filter(x=>x.head>=5).sort((a,b)=>b.nsp-a.nsp);
+  if(A.length>1)add('warn','Area ที่ No Sales สูงสุด',`${A.slice(0,3).map(a=>`${a.name} ${fp(a.nsp,0)} (${a.ns}/${a.head})`).join(' · ')} · ต่ำสุด ${A[A.length-1].name} ${fp(A[A.length-1].nsp,0)}`);
+  const T=nsGroup('ty').filter(x=>x.head>=5).sort((a,b)=>b.nsp-a.nsp);
+  if(T.length>1)add('info','Shop Type ที่ No Sales สูงสุด',`${T.slice(0,3).map(a=>`${a.name} ${fp(a.nsp,0)} (${a.ns}/${a.head})`).join(' · ')}`);
+  const S=nsGroup('shop'),allNs=S.filter(x=>x.head>=2&&x.sell===0);
+  if(allNs.length)add('crit','ร้านที่ทั้งร้านไม่มียอด',`${allNs.length} ร้าน (พนักงานรวม ${f0(allNs.reduce((a,x)=>a+x.head,0))} คน) เช่น ${[...allNs].sort((a,b)=>b.head-a.head).slice(0,3).map(x=>`${x.name} (${x.head} คน)`).join(', ')}`);
+  const top=dsNSTop().rows.slice(0,10);
+  if(top.length)add('info','การกระจุกตัวของ No Sales',`10 ร้านแรกมีพนักงานไม่มียอด ${f0(top.reduce((a,x)=>a+x.ns,0))} คน = ${fp(top[top.length-1].cum,0)} ของ No Sales ทั้งหมด`);
+  const cnt=[0,0,0,0];el.forEach(x=>cnt[x.ci]++);
+  add('info','การกระจายผลงาน',`Above ${cnt[0]} (${fp(cnt[0]/n,0)}) · Average ${cnt[1]} (${fp(cnt[1]/n,0)}) · Below ${cnt[2]} (${fp(cnt[2]/n,0)}) · No Sales ${cnt[3]} (${fp(cnt[3]/n,0)}) · ค่าเฉลี่ยต่อคนที่มียอด ${CUR()}${f0(scope.mixAvg)}`);
+  const so=[...el].sort((a,b)=>b.act-a.act),k=Math.max(1,Math.round(n*.1)),tot=el.reduce((a,x)=>a+x.act,0);
+  if(tot>0){const sh=so.slice(0,k).reduce((a,x)=>a+x.act,0)/tot;add(sh>.5?'warn':'info','พึ่งพาพนักงานท็อป',`พนักงาน 10% แรก (${k} คน) สร้างยอด ${fp(sh,0)} ของยอดพนักงานทั้งหมด`)}
+  const F=avgGroup(x=>x.et||'-').rows.filter(x=>x.head>=10).sort((a,b)=>b.rHead-a.rHead);
+  if(F.length>1)add('info','Productivity ตาม EMP_TYPE',`RR / Staff สูงสุด ${F[0].first.et} ${CUR()}${f0(F[0].rHead)} · ต่ำสุด ${F[F.length-1].first.et} ${CUR()}${f0(F[F.length-1].rHead)}${F[F.length-1].rHead>0?` (ต่างกัน ${(F[0].rHead/F[F.length-1].rHead).toFixed(1)} เท่า)`:''}`);
+  const RT=avgGroup(x=>x.rg+'|'+x.ty).rows.filter(x=>x.head>=10).sort((a,b)=>b.rHead-a.rHead);
+  if(RT.length>1)add('info','Region × Shop Type ที่ผลิตภาพสูง/ต่ำ',`สูงสุด ${RT[0].first.rg} · ${RT[0].first.ty} (${CUR()}${f0(RT[0].rHead)}/คน) · ต่ำสุด ${RT[RT.length-1].first.rg} · ${RT[RT.length-1].first.ty} (${CUR()}${f0(RT[RT.length-1].rHead)}/คน)`);
+  if(lost)R.push(`<b>ตามพนักงาน No Sales ที่เคยขายเดือนก่อน ${lost} คน:</b> ตรวจสาเหตุ (ลางาน ย้ายร้าน สิทธิ์ระบบ ขาดสินค้า/โปรโมชัน) ก่อนวางแผน Coaching`);
+  if(A.length>1)R.push(`<b>ลงพื้นที่ ${A.slice(0,2).map(a=>a.name).join(' และ ')}:</b> No Sales สูงสุด ควรมี Action plan รายร้านและติดตามรายสัปดาห์`);
+  if(allNs.length)R.push(`<b>ตรวจร้านที่ทั้งร้านไม่มียอด ${allNs.length} ร้าน:</b> ยืนยันว่าร้านยังเปิดดำเนินการ รายชื่อพนักงานเป็นปัจจุบัน และมีสิทธิ์ขายครบ`);
+  if(cnt[2])R.push(`<b>ยกระดับกลุ่ม Below Average ${cnt[2]} คน:</b> จับคู่กับ Above Average (${cnt[0]} คน) ใน Area เดียวกัน และแชร์ Talking point/แคมเปญที่ขายดี`);
+  if(F.length>1)R.push(`<b>ถอดแนวทางจาก EMP_TYPE ${F[0].first.et}:</b> ผลิตภาพสูงสุด นำไปปรับใช้กับกลุ่มที่ต่ำ เช่น ${F[F.length-1].first.et}`);
+  $('#staffIns').innerHTML=I.map(x=>`<div class="in"><h3><span class="pill ${x.c}">${lv(x.c)}</span>${esc(x.t)}</h3><p>${esc(x.b)}</p></div>`).join('');
+  $('#staffRecs').innerHTML=R.map(x=>`<li>${x}</li>`).join('');
+  scope.sIns=I;scope.sRecs=R.map(x=>x.replace(/<[^>]+>/g,''));
+}
+function renderStaff(){
+  classify();
+  table('tNS',$('#tNS'),dsNS(UI.ns),{sort:'ns'});
+  table('tNSTop',$('#tNSTop'),dsNSTop(),{sort:'rank',dir:1});
+  table('tMix',$('#tMix'),mixDs(),{simple:true,sort:'name',dir:1});
+  $('#mixNote').textContent=`ค่าเฉลี่ยต่อคน (เฉพาะพนักงานที่มียอด) = ${CUR()}${f0(scope.mixAvg)}${UI.metric==='qty'?' รายการ':''} · Above Average = มากกว่า 120% ของค่าเฉลี่ย · Average = 80–120% · Below Average = ต่ำกว่า 80% · No Sales = ไม่มียอด · นับพนักงานที่มีเป้าหรือมียอด`;
+  table('tStaff',$('#tStaff'),dsStaff(),{sort:'act'});
+  AP.forEach((f,i)=>table('tAP'+(i+1),$('#tAP'+(i+1)),f(),{sort:'rHead',simple:i<5&&i!==4}));
+  staffInsights();
+}
+function renderStaffCharts(){
+  if(!scope.staffEl)return;
+  const s1=cv('--s1'),s2=cv('--s2'),s3=cv('--s3'),s4=cv('--s4'),base=cv('--base');
+  const dim=UI.ns,g=nsGroup(dim).sort((a,b)=>b.ns-a.ns||b.nsp-a.nsp).slice(0,dim==='shop'?20:30);
+  mk('chNS',{type:'bar',data:{labels:g.map(x=>x.name),datasets:[bar('มียอด',g.map(x=>x.sell),s1,{stack:'a',maxBarThickness:22}),bar('No Sales',g.map(x=>x.ns),s2,{stack:'a',maxBarThickness:22})]},options:{indexAxis:'y',scales:{x:{stacked:true,beginAtZero:true,ticks:{callback:v=>f0(v)}},y:{stacked:true,grid:{color:'transparent'}}},plugins:{tooltip:{callbacks:{afterBody:i=>{const x=g[i[0].dataIndex];return x?`% No Sales: ${fp(x.nsp)}`:''}}}}}});
+  $('#nsNote').textContent=dim==='shop'?'แสดง 20 ร้านที่มีพนักงาน No Sales มากที่สุด (ดูทั้งหมดในตารางด้านล่าง)':'เรียงตามจำนวนพนักงาน No Sales มากไปน้อย';
+  const tp=dsNSTop().rows.slice(0,15);
+  mk('chNSTop',{type:'bar',data:{labels:tp.map(x=>x.name),datasets:[bar('พนักงานทั้งหมด',tp.map(x=>x.head),base,{maxBarThickness:16}),bar('No Sales',tp.map(x=>x.ns),s2,{maxBarThickness:16})]},options:{indexAxis:'y',scales:{x:{beginAtZero:true,ticks:{callback:v=>f0(v)}},y:{grid:{color:'transparent'}}},plugins:{tooltip:{callbacks:{afterBody:i=>{const x=tp[i[0].dataIndex];return x?`% No Sales: ${fp(x.nsp)} · สะสม ${fp(x.cum)}`:''}}}}}});
+  $('#nsTopNote').textContent=tp.length?`15 ร้านแรกครอบคลุม No Sales ${fp(tp[tp.length-1].cum,0)} ของทั้งหมด`:'ไม่มีพนักงาน No Sales';
+  const el=scope.staffEl,cnt=[0,0,0,0];el.forEach(x=>cnt[x.ci]++);
+  mk('chDist1',{type:'bar',data:{labels:CLS,datasets:[{type:'bar',label:'พนักงาน',data:cnt,backgroundColor:[s3,s1,s4,base],borderRadius:6,borderSkipped:false,maxBarThickness:60}]},options:{plugins:{legend:{display:false},vl:{on:true},tooltip:{callbacks:{label:c=>` ${f0(c.raw)} คน (${fp(ratio(c.raw,el.length))})`}}},scales:{y:{beginAtZero:true,grace:'12%'}}}});
+  const av=scope.mixAvg,B=[['ไม่มียอด',x=>x.act===0],['< 50%',x=>x.act>0&&x.act<av*.5],['50–80%',x=>x.act>=av*.5&&x.act<av*.8],['80–120%',x=>x.act>=av*.8&&x.act<av*1.2],['120–200%',x=>x.act>=av*1.2&&x.act<av*2],['≥ 200%',x=>x.act>=av*2]];
+  mk('chDist2',{type:'bar',data:{labels:B.map(b=>b[0]),datasets:[{type:'bar',label:'พนักงาน',data:B.map(b=>el.filter(b[1]).length),backgroundColor:[base,s2,s4,s1,s3,s3],borderRadius:6,borderSkipped:false,maxBarThickness:50}]},options:{plugins:{legend:{display:false},vl:{on:true}},scales:{y:{beginAtZero:true,grace:'12%'},x:{title:{display:true,text:'ยอดต่อคนเทียบค่าเฉลี่ย',color:cv('--muted')}}}}});
+  const mx=mixDs().rows;
+  mk('chStaffMix',{type:'bar',data:{labels:mx.map(r=>r.name),datasets:[bar('Above Average',mx.map(r=>isFinite(r.ap)?r.ap*100:0),s3,{pct:true,stack:'m',maxBarThickness:22}),bar('Average',mx.map(r=>isFinite(r.mp)?r.mp*100:0),s1,{pct:true,stack:'m',maxBarThickness:22}),bar('Below Average',mx.map(r=>isFinite(r.bp)?r.bp*100:0),s4,{pct:true,stack:'m',maxBarThickness:22}),bar('No Sales',mx.map(r=>isFinite(r.np)?r.np*100:0),base,{pct:true,stack:'m',maxBarThickness:22})]},options:{indexAxis:'y',scales:{x:{stacked:true,max:100,ticks:{callback:v=>v+'%'}},y:{stacked:true,grid:{color:'transparent'}}}}});
+}
+
+/* ---------- campaign ---------- */
+const CP_CATS=[['CCTV',2],['Content',3],['MESH',1],['TRUE ID',4],['VAS',0]];
+function campRows(){
+  const set=new Set(scope.shops.map(s=>s.i)),m=new Map(),camps=D.camps||[];
+  for(const x of D.sales){
+    if(x.length<7||!set.has(x[2]))continue;
+    let o=m.get(x[6]);if(!o){o={name:camps[x[6]]||'(ไม่ระบุ)',cat:x[4],q:0,v:0,pq:0,pv:0,pfq:0,pfv:0};m.set(x[6],o)}
+    if(x[0]===cal.cm){o.q++;o.v+=x[5]}else if(x[0]===cal.pm){o.pfq++;o.pfv+=x[5];if(x[1]<=cal.E){o.pq++;o.pv+=x[5]}}
+  }
+  const tot={};[...m.values()].forEach(o=>{tot[o.cat]=(tot[o.cat]||0)+o.q});
+  return[...m.values()].map(o=>({cat:CATS[o.cat],ci:o.cat,name:o.name,qty:o.q,rev:o.v,share:ratio(o.q,tot[o.cat]),avg:o.q?o.v/o.q:NaN,pq:o.pq,pv:o.pv,momQ:growth(o.q,o.pq),pfq:o.pfq,pfv:o.pfv})).sort((a,b)=>b.qty-a.qty||b.pq-a.pq).map((o,i)=>({rank:i+1,...o}));
+}
+const dsCamp=()=>{const all=campRows();const rows=(UI.camp==='all'?all:all.filter(x=>x.ci===+UI.camp)).map((x,i)=>({...x,rank:i+1}));
+  return{cols:[{k:'rank',l:'#',t:'n'},{k:'cat',l:'หมวด',t:'s'},{k:'name',l:'Campaign',t:'s',cls:'nm'},{k:'qty',l:'Qty (จำนวนขาย)',t:'n'},{k:'rev',l:'Revenue',t:'n'},{k:'share',l:'สัดส่วนในหมวด',t:'p'},{k:'avg',l:'฿ / รายการ',t:'d'},{k:'pq',l:'Qty เดือนก่อน (MTD)',t:'n'},{k:'momQ',l:'MOM Qty',t:'g'},{k:'pfq',l:'Qty เดือนก่อน (เต็มเดือน)',t:'n'},{k:'pfv',l:'Rev เดือนก่อน (เต็มเดือน)',t:'n'}],rows,all}};
+function campInsightCard(name,ci,all){
+  const r=all.filter(x=>x.ci===ci).sort((a,b)=>b.qty-a.qty||b.pfq-a.pfq);
+  const tq=r.reduce((a,x)=>a+x.qty,0),tv=r.reduce((a,x)=>a+x.rev,0),pq=r.reduce((a,x)=>a+x.pq,0),pfq=r.reduce((a,x)=>a+x.pfq,0);
+  const allQ=all.reduce((a,x)=>a+x.qty,0);
+  if(!r.length)return`<div class="in"><h3>${esc(name)}</h3><p>ไม่มียอดขายในขอบเขตที่เลือก</p></div>`;
+  if(!tq)return`<div class="in"><h3>${esc(name)}<span class="pill crit">ไม่มียอดเดือนนี้</span></h3><p>เดือนก่อนขายได้ ${f0(pfq)} รายการ (${r.length} แคมเปญ) แต่เดือนนี้ยังไม่มียอด ควรตรวจว่าแคมเปญยังเปิดขายอยู่หรือไม่</p></div>`;
+  const mom=growth(tq,pq),top=r[0],sh=top.qty/tq;
+  const pc=!isFinite(mom)?'info':mom>=.05?'good':mom<=-.05?'crit':'warn';
+  const L=[];
+  L.push(`ขายแล้ว <b>${f0(tq)}</b> รายการ ${CUR()}${f0(tv)} (${fp(tq/Math.max(allQ,1),0)} ของจำนวนขายทั้งหมด) · เฉลี่ย ${CUR()}${(tv/tq).toFixed(0)}/รายการ`);
+  L.push(`ขายดีสุด: ${r.filter(x=>x.qty>0).slice(0,3).map((x,i)=>`${i+1}) ${esc(x.name)} ${f0(x.qty)} (${fp(x.share,0)})`).join(' · ')}`);
+  const up=r.filter(x=>x.pq>=10&&x.momQ>=.2).sort((a,b)=>b.momQ-a.momQ)[0],dn=r.filter(x=>x.pq>=10&&x.momQ<=-.2).sort((a,b)=>a.momQ-b.momQ)[0];
+  const gone=r.filter(x=>x.pq>=10&&x.qty===0);
+  const I=[];
+  if(sh>=.6&&r.filter(x=>x.qty>0).length>1)I.push(`พึ่งพาแคมเปญเดียว: ${esc(top.name)} คิดเป็น ${fp(sh,0)} ของหมวด`);
+  else if(r.filter(x=>x.qty>0).length===1)I.push(`หมวดนี้ขายได้เพียง 1 แคมเปญ: ${esc(top.name)}`);
+  if(up)I.push(`แคมเปญที่โตเร็ว: ${esc(up.name)} (${fg(up.momQ)})`);
+  if(dn)I.push(`แคมเปญที่ลดลง: ${esc(dn.name)} (${fg(dn.momQ)})`);
+  if(gone.length)I.push(`แคมเปญที่เดือนก่อนขายได้แต่เดือนนี้ไม่มียอด: ${gone.map(x=>esc(x.name)).join(', ')}`);
+  const R=[];
+  if(dn)R.push(`ตรวจโปรโมชันและสื่อขายของ ${esc(dn.name)}`);
+  if(sh>=.6&&r.filter(x=>x.qty>0).length>1)R.push(`ดันแคมเปญอันดับ 2–3 เพื่อกระจายความเสี่ยง`);
+  if(up)R.push(`ขยายแนวทางของ ${esc(up.name)} ไปร้านที่ยังขายน้อย`);
+  if(!R.length)R.push(`รักษาจังหวะการขาย และติดตามแคมเปญอันดับหนึ่งทุกสัปดาห์`);
+  return`<div class="in"><h3>${esc(name)}<span class="pill ${pc}">${isFinite(mom)?fg(mom,0)+' MOM':'ใหม่'}</span></h3><p>${L.join('<br>')}</p>${I.length?`<p style="margin-top:6px"><b>Insight:</b> ${I.join(' · ')}</p>`:''}<p style="margin-top:6px"><b>ข้อเสนอ:</b> ${R.join(' · ')}</p></div>`;
+}
+function renderCampaign(){
+  if(!D.camps||!D.sales.some(x=>x.length>=7)){$('#campIns').innerHTML='<div class="in"><p>ชุดข้อมูลนี้ยังไม่มีชื่อ Campaign กรุณาอัปโหลดไฟล์ใหม่ในแท็บ Admin</p></div>';return}
+  const ds=dsCamp();
+  table('tCamp',$('#tCamp'),ds,{sort:'qty'});
+  const all=ds.all;
+  $('#campIns').innerHTML=CP_CATS.map(([n,ci])=>campInsightCard(n,ci,all)).join('');
+  const t3=all.filter(x=>x.qty>0).slice(0,3),tq=all.reduce((a,x)=>a+x.qty,0);
+  $('#campNote').textContent=t3.length?`Top 3 ทั้งหมด: ${t3.map(x=>`${x.name} (${f0(x.qty)} รายการ, ${fp(x.qty/tq,0)})`).join(' · ')}`:'';
+}
+
+/* ---------- render all ---------- */
+function renderAll(){
+  document.querySelectorAll('[data-tg]').forEach(b=>{b.hidden=!tgOn();if(b.hidden&&b.classList.contains('on')){b.classList.remove('on');b.parentNode.querySelector('button').classList.add('on');UI[b.parentNode.id]='act'}});
+  computeScope();renderKPIs();buildInsights();renderStaff();
+  table('tRegion',$('#tRegion'),dsRegion(),{simple:true,sort:'act'});
+  table('tArea',$('#tArea'),dsArea(),{sort:'act',full:true});
+  table('tShop',$('#tShop'),dsShop(),{sort:'act'});
+  renderCampaign();
+  table('tCat',$('#tCat'),dsCat(),{simple:true,sort:'act'});
+  table('tTopShop',$('#tTopShop'),rankDs(scope.shopRows,UI.rkShop,true,false),{simple:true,sort:'rank',dir:1});
+  table('tBotShop',$('#tBotShop'),rankDs(scope.shopRows,UI.rkShop,false,false),{simple:true,sort:'rank',dir:1});
+  $('#zeroShop').textContent=`(ร้านที่ไม่มียอด ${scope.shopRows.filter(s=>s.act===0).length} ร้าน เรียงตามเป้าสูง→ต่ำ)`;
+  renderCharts();
+}
+
+/* ---------- export all ---------- */
+function exportAll(){
+  if(!window.XLSX){flash('โหลดตัวสร้าง Excel ไม่สำเร็จ ใช้ปุ่ม Export CSV ของแต่ละตารางแทน');return}
+  const wb=XLSX.utils.book_new();const add=(n,aoa)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aoa),n);
+  const r=scope.rec;
+  add('Summary',[['ตัวกรอง',`Region=${F.rg||'ทั้งหมด'} | Area=${F.ar||'ทั้งหมด'} | Type=${F.ty||'ทั้งหมด'}`],['ข้อมูล ณ',D.asof],['Target',Math.round(r.tg)],['Actual',Math.round(r.act)],['Runrate',Math.round(scope.rr)],['%Ach',+(ratio(r.act,r.tg)*100).toFixed(2)],['RR %Ach',+(ratio(scope.rr,r.tg)*100).toFixed(2)],['GAP to Target',Math.round(r.tg-r.act)],['MOM Growth % (MTD)',+(growth(r.act,r.pAct)*100).toFixed(2)],['Active Shops',scope.shops.filter(s=>shopRec[s.i].act>0).length],['Total Shops',scope.shops.length],['Active Staff',scope.staff.filter(s=>staffRec[s.i].act>0).length],['No Sale Staff',scope.staff.filter(s=>s.tg>0&&staffRec[s.i].act===0).length]]);
+  add('Insights',[['ระดับ','หัวข้อ','รายละเอียด'],...scope.ins.map(i=>[i.c,i.t,i.b]),[],['ข้อเสนอแนะ'],...scope.recs.map(x=>[x])]);
+  const sets={Region:dsRegion(),Area:dsArea(),Shop:dsShop(),Staff_Detail:dsStaff(),Category:dsCat(),Staff_Mix_Area:mixDs(),NoSales_Area:dsNS('ar'),NoSales_ShopType:dsNS('ty'),NoSales_Shop:dsNS('shop'),NoSales_TopShops:dsNSTop(),AP_Region_ShopType:AP[0](),AP_Area_ShopType:AP[1](),AP_Function:AP[2](),AP_Region:AP[3](),AP_Area:AP[4](),AP_Shop:AP[5]()};
+  if(D.camps){const c=dsCamp();c.rows=c.all;sets.Campaign=c}
+  for(const [n,ds] of Object.entries(sets))add(n,dsToAOA(ds,n));
+  const keep=UI.tr;for(const m of ['daily','wow','mtd','mom']){UI.tr=m;const ds=trendDs();add(ds.id,dsToAOA(ds,ds.id))}UI.tr=keep;
+  const out=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+  saveFile(`Upsell_True_Online_Performance_${D.asof}.xlsx`,new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+}
+</script>
