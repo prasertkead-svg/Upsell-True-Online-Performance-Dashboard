@@ -347,11 +347,15 @@ function buildDataset(R,fname){
   const s=String(mx);
   return{asof:`${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`,shops,staff,camps,sales,meta:{updated:new Date().toISOString(),file:fname||''}};
 }
+const CANON=['UPSELL_TYPE','INTRACN_DT_CMPLET','INTRACN_DT','DLR_PARTNER_CODE','SL_PARTNER_CODE','NET_RC','FLAG_UPSELL','CAMPAIGN_NAME','PROD_OFR_NM','CODE','SHOP NAME','TOL_UPSELL','EMP_ID','NAME','Position','EMP_TYPE','shop_code','SHOP CODE','TYPE SHOP','AREA','Size Shop','REGION','AM'];
+const hnorm=x=>sv(x).replace(/[\u00a0\s]+/g,' ').toLowerCase();
+const CMAP=new Map(CANON.map(c=>[hnorm(c),c]));
 function readTbl(wb,name,must){
-  const ws=wb.Sheets[name];if(!ws)throw new Error('ไม่พบชีต '+name);
+  const sn=wb.SheetNames.find(n=>hnorm(n)===hnorm(name));
+  const ws=sn&&wb.Sheets[sn];if(!ws)throw new Error('ไม่พบชีต '+name);
   const a=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null,blankrows:false});
-  const hi=a.findIndex(r=>r&&r.some(c=>sv(c)===must));if(hi<0)throw new Error(`ชีต ${name} ไม่พบคอลัมน์ ${must}`);
-  const h=a[hi].map(sv);
+  const hi=a.findIndex(r=>r&&r.some(c=>hnorm(c)===hnorm(must)));if(hi<0)throw new Error(`ชีต ${name} ไม่พบคอลัมน์ ${must}`);
+  const h=a[hi].map(x=>CMAP.get(hnorm(x))||sv(x));
   return a.slice(hi+1).map(r=>{const o={};h.forEach((k,i)=>{if(k&&!(k in o))o[k]=r[i]});return o});
 }
 function summarize(d){
