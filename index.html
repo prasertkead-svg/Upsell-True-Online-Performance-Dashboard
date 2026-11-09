@@ -292,12 +292,14 @@ const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 async function kek(pw,salt){const km=await crypto.subtle.importKey('raw',te.encode(pw),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:ITER,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['encrypt','decrypt'])}
 const dec=(key,o)=>crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(o.iv)},key,unb64(o.ct)).then(x=>new Uint8Array(x));
 async function enc(key,u8){const iv=crypto.getRandomValues(new Uint8Array(12));const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},key,u8));return{iv:b64(iv),ct:b64(ct)}}
+async function gz(u8){if(typeof CompressionStream==='undefined')return u8;const cs=new CompressionStream('gzip');const w=cs.writable.getWriter();w.write(u8);w.close();return new Uint8Array(await new Response(cs.readable).arrayBuffer())}
+async function gunz(u8){if(!(u8[0]===0x1f&&u8[1]===0x8b))return u8;const ds=new DecompressionStream('gzip');const w=ds.writable.getWriter();w.write(u8);w.close();return new Uint8Array(await new Response(ds.readable).arrayBuffer())}
 async function openPayload(P,pw){
   let role=null,dk=null,admK=null;
   for(const r of ['pub','adm']){try{const k=await kek(pw,unb64(P[r].salt));dk=await dec(k,P[r]);role=r;if(r==='adm')admK=k;break}catch(e){}}
   if(!role)throw new Error('bad');
   const dkey=await crypto.subtle.importKey('raw',dk,'AES-GCM',false,['decrypt']);
-  const data=JSON.parse(td.decode(await dec(dkey,P.data)));
+  const data=JSON.parse(td.decode(await gunz(await dec(dkey,P.data))));
   let pubPw='';if(role==='adm'){try{pubPw=td.decode(await dec(admK,P.pw))}catch(e){}}
   let gh=null;if(role==='adm'&&P.gh){try{gh=JSON.parse(td.decode(await dec(admK,P.gh)))}catch(e){}}
   return{data,role,pubPw,gh};
@@ -307,7 +309,7 @@ async function sealPayload(data,pubPw,admPw,gh){
   const dkey=await crypto.subtle.importKey('raw',dk,'AES-GCM',false,['encrypt']);
   const wrap=async pw=>{const salt=crypto.getRandomValues(new Uint8Array(16));const k=await kek(pw,salt);const e=await enc(k,dk);return{o:{salt:b64(salt),iv:e.iv,ct:e.ct},k}};
   const pub=await wrap(pubPw),adm=await wrap(admPw);
-  return{v:2,pub:pub.o,adm:adm.o,data:await enc(dkey,te.encode(JSON.stringify(data))),pw:await enc(adm.k,te.encode(pubPw)),gh:gh?await enc(adm.k,te.encode(JSON.stringify(gh))):undefined};
+  return{v:2,pub:pub.o,adm:adm.o,data:await enc(dkey,await gz(te.encode(JSON.stringify(data)))),pw:await enc(adm.k,te.encode(pubPw)),gh:gh?await enc(adm.k,te.encode(JSON.stringify(gh))):undefined};
 }
 async function loadPay(){const r=await fetch('data.json',{cache:'no-store'});if(!r.ok)throw new Error('load');return r.json()}
 /* ---------- session persistence: refresh keeps you signed in on the same view; only the Logout button signs out ---------- */
