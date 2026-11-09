@@ -397,12 +397,13 @@ async function publishData(data,pubPw,admPw,statEl,done){
   try{
     setStat(statEl,'กำลังเข้ารหัสและบันทึก…');
     const P=await sealPayload(data,pubPw,admPw);
-    const art=await claude.use('artifact');
-    if(!art)throw{code:'unavailable'};
-    await art.publish({'data.json':{content:JSON.stringify(P),contentType:'application/json'}});
+    const art=typeof claude!=='undefined'?await claude.use('artifact'):null;
+    let local=false;
+    if(art)await art.publish({'data.json':{content:JSON.stringify(P),contentType:'application/json'}});
+    else{local=true;browserSave('data.json',JSON.stringify(P),'application/json')}
     PAY=P;LASTIV=P.data.iv;D=data;ADM={pw:admPw,pubPw};
     UI.month=0;initModel();F={rg:'',ar:'',ty:''};fillFilters();$('#fRg').value='';$('#fTy').value='';renderAll();renderAdmin();
-    setStat(statEl,done||'บันทึกเรียบร้อย ผู้ใช้ทุกคนจะเห็นข้อมูลใหม่','ok');
+    setStat(statEl,local?'เปิดเพจนี้นอก claude.ai จึงบันทึกขึ้นระบบโดยตรงไม่ได้ ได้ดาวน์โหลดไฟล์ data.json ใหม่ให้แล้ว นำไปแทนที่ไฟล์ data.json ใน GitHub repo (Add file → Upload files) แล้วทุกคนจะเห็นข้อมูลใหม่ภายใน 1–2 นาที ตอนนี้หน้านี้แสดงข้อมูลใหม่แล้ว':(done||'บันทึกเรียบร้อย ผู้ใช้ทุกคนจะเห็นข้อมูลใหม่'),local?'':'ok');
   }catch(e){
     const c=e&&e.code;
     setStat(statEl,c==='conflict'?'มีการบันทึกอื่นเกิดขึ้นก่อน หน้าจะรีเฟรชเป็นเวอร์ชันล่าสุด กรุณาลองใหม่':
@@ -603,7 +604,13 @@ function paint(id){
   const ex=st.el.querySelector('[data-a=exp]'),sc=st.el.querySelector('.sc'),more=r.length>ROWS_VIS;
   ex.hidden=!more;ex.textContent=st.open?'⤡ ย่อตาราง':`⤢ ขยายดูทั้งหมด (${r.length.toLocaleString()} แถว)`;sc.classList.toggle('open',st.open&&more);
 }
+function browserSave(name,data,type){
+  const blob=data instanceof Blob?data:new Blob([data],{type:type||'text/plain;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);
+}
 async function saveFile(name,data){
+  if(typeof claude==='undefined'){browserSave(name,data);return}
   try{const dl=await claude.use('downloads');if(!dl){flash('ไม่สามารถดาวน์โหลดในมุมมองนี้');return}await dl.save({filename:name,data});}
   catch(e){if(e&&e.code!=='declined')flash('ดาวน์โหลดไม่สำเร็จ ('+(e.code||'error')+')')}
 }
