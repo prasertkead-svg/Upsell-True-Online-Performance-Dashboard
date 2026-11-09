@@ -285,28 +285,42 @@ async function sealPayload(data,pubPw,admPw){
   return{v:2,pub:pub.o,adm:adm.o,data:await enc(dkey,te.encode(JSON.stringify(data))),pw:await enc(adm.k,te.encode(pubPw))};
 }
 async function loadPay(){const r=await fetch('data.json',{cache:'no-store'});if(!r.ok)throw new Error('load');return r.json()}
-loadPay().then(p=>{PAY=p}).catch(()=>{});
+/* ---------- session persistence: refresh keeps you signed in on the same view; only the Logout button signs out ---------- */
+const SK_S='uwp_session_v1',SK_V='uwp_view_v1';
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+function saveView(){if(!D)return;store.set(SK_V,JSON.stringify({UI,F,y:window.scrollY}))}
+function loadView(){try{return JSON.parse(store.get(SK_V)||'null')}catch(e){return null}}
+async function enter(pw){
+  if(!(window.crypto&&crypto.subtle))throw new Error('nocrypto');
+  if(!PAY)PAY=await loadPay();
+  const r=await openPayload(PAY,pw);
+  D=r.data;ROLE=r.role;ADM={pw,pubPw:r.pubPw};
+  store.set(SK_S,JSON.stringify({pw}));
+  $('#gate').hidden=true;$('#app').hidden=false;$('#gpass').value='';
+  boot();
+}
+const SAVED=(()=>{try{return JSON.parse(store.get(SK_S)||'null')}catch(e){return null}})();
+if(SAVED&&SAVED.pw)$('#gate').hidden=true;
+loadPay().then(async p=>{
+  PAY=p;
+  if(SAVED&&SAVED.pw){try{await enter(SAVED.pw)}catch(e){if(e&&e.message==='bad')store.del(SK_S);$('#gate').hidden=false}}
+}).catch(()=>{if(SAVED&&SAVED.pw)$('#gate').hidden=false});
 $('#gform').addEventListener('submit',async e=>{
   e.preventDefault();
   const b=$('#gbtn'),er=$('#gerr');er.textContent='';b.disabled=true;b.textContent='กำลังตรวจสอบ…';
   try{
-    if(!(window.crypto&&crypto.subtle))throw new Error('nocrypto');
-    if(!PAY)PAY=await loadPay();
-    const pw=$('#gpass').value.trim();
-    const r=await openPayload(PAY,pw);
-    D=r.data;ROLE=r.role;ADM={pw,pubPw:r.pubPw};
-    $('#gate').hidden=true;$('#app').hidden=false;$('#gpass').value='';
-    boot();
-  }catch(x){er.textContent=x.message==='nocrypto'?'เบราว์เซอร์นี้ไม่รองรับการถอดรหัส':x.message==='load'||x.name==='TypeError'?'โหลดข้อมูลไม่สำเร็จ กรุณารีเฟรชหน้า':'รหัสผ่านไม่ถูกต้อง';}
+    await enter($('#gpass').value.trim());
+  }catch(x){er.textContent=x.message==='nocrypto'?'เบราว์เซอร์นี้ไม่รองรับการถอดรหัส':x.message==='load'||x.name==='TypeError'?'โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่':'รหัสผ่านไม่ถูกต้อง'}
   b.disabled=false;b.textContent='เข้าใช้งาน';
 });
-$('#lock').onclick=()=>location.reload();
+$('#lock').onclick=()=>{store.del(SK_S);store.del(SK_V);location.reload()};
+window.addEventListener('pagehide',saveView);
 
 /* ---------- tabs ---------- */
 const TABS=['overall','area','shop','staff','campaign','insight','admin'];
 function showTab(t){
   if(t==='admin'&&ROLE!=='adm')t='overall';
-  UI.tab=t;
+  UI.tab=t;saveView();
   TABS.forEach(x=>{const p=$('#p-'+x);if(p)p.hidden=x!==t});
   document.querySelectorAll('#tabs button').forEach(b=>{const on=b.dataset.t===t;b.classList.toggle('on',on);b.setAttribute('aria-selected',on)});
   if(t==='admin')renderAdmin();
@@ -482,7 +496,7 @@ async function checkLive(){
     if(!P||!P.data||P.data.iv===LASTIV)return;
     let r;
     try{r=await openPayload(P,ADM.pw)}
-    catch(e){clearInterval(LIVET);flash('มีการเปลี่ยนรหัสผ่านหรือข้อมูลใหม่ กรุณาเข้าสู่ระบบอีกครั้ง');setTimeout(()=>location.reload(),2500);return}
+    catch(e){clearInterval(LIVET);store.del(SK_S);flash('มีการเปลี่ยนรหัสผ่านหรือข้อมูลใหม่ กรุณาเข้าสู่ระบบอีกครั้ง');setTimeout(()=>location.reload(),2500);return}
     LASTIV=P.data.iv;PAY=P;D=r.data;ROLE=r.role;ADM.pubPw=r.pubPw;
     const keep={rg:F.rg,ar:F.ar,ty:F.ty};
     initModel();fillFilters();
@@ -497,8 +511,18 @@ function startLive(){
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkLive()});
   window.addEventListener('online',checkLive);
 }
+function syncSegs(){
+  const m={rkShop:'rkShop',nsDim:'ns',cpCat:'camp',rqDim:'rq',trTab:'tr',metSeg:'metric'};
+  for(const [id,k] of Object.entries(m)){const bs=document.querySelectorAll('#'+id+' button');if(![...bs].some(b=>b.dataset.m===String(UI[k])))continue;bs.forEach(b=>b.classList.toggle('on',b.dataset.m===String(UI[k])))}
+}
 function boot(){
-  startLive();initModel();$('#tabAdmin').hidden=ROLE!=='adm';fillFilters();bindUI();showTab('overall');renderAll();
+  const v=loadView();
+  if(v&&v.UI){Object.assign(UI,v.UI);if(v.F)F={rg:v.F.rg||'',ar:v.F.ar||'',ty:v.F.ty||''}}
+  startLive();initModel();$('#tabAdmin').hidden=ROLE!=='adm';fillFilters();
+  if(!SH.some(x=>x.rg===F.rg))F.rg='';if(!SH.some(x=>x.ty===F.ty))F.ty='';if(!SH.some(x=>x.ar===F.ar))F.ar='';
+  $('#fRg').value=F.rg;$('#fTy').value=F.ty;fillAreas();$('#fAr').value=F.ar;
+  bindUI();syncSegs();showTab(UI.tab||'overall');renderAll();
+  if(v&&v.y)requestAnimationFrame(()=>window.scrollTo(0,v.y));
 }
 
 /* ---------- filters ---------- */
@@ -1023,6 +1047,7 @@ function renderCampaign(){
 
 /* ---------- render all ---------- */
 function renderAll(){
+  saveView();
   document.querySelectorAll('[data-tg]').forEach(b=>{b.hidden=!tgOn();if(b.hidden&&b.classList.contains('on')){b.classList.remove('on');b.parentNode.querySelector('button').classList.add('on');UI[b.parentNode.id]='act'}});
   computeScope();renderKPIs();buildInsights();renderStaff();
   table('tRegion',$('#tRegion'),dsRegion(),{simple:true,sort:'act'});
