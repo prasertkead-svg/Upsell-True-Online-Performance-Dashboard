@@ -242,6 +242,7 @@ thead th{background:var(--surface2)}
 <div class="kpis" id="kpis"></div>
 <section class="card c8"><div class="ch"><h2>Daily Sales Trend<span class=sub id="dailySub">เดือนนี้ เทียบเดือนที่แล้ว</span></h2><button class=tg aria-label=ย่อ/ขยาย>▾</button></div><div class="cb"><div class="chart"><canvas id="chDaily"></canvas></div><div class="note" id="dailyNote"></div></div></section>
 <section class="card c4"><div class="ch"><h2>สัดส่วนยอดขายตามหมวด<span class=sub id="pieSub">VAS · MESH · CCTV · Content · TRUE ID</span></h2><button class=tg aria-label=ย่อ/ขยาย>▾</button></div><div class="cb"><div class="chart"><canvas id="chPie"></canvas></div><div class="note" id="pieNote"></div></div></section>
+<section class="card c12" style="grid-column:1/-1"><div class="ch"><h2>Daily Sales · Category × Date<span class=sub>ยอดขายรายวัน แยกตามหมวด (เดือนปัจจุบัน)</span></h2><button class=tg aria-label=ย่อ/ขยาย>▾</button></div><div class="cb"><div id="tCatDate"></div></div></section>
 <section class="card c4"><div class="ch"><h2 id="tvaT">Target vs Actual vs Runrate</h2><button class=tg aria-label=ย่อ/ขยาย>▾</button></div><div class="cb"><div class="chart"><canvas id="chTVA"></canvas></div></div></section>
 <section class="card c8"><div class="ch"><h2>Performance by Region</h2><button class=tg aria-label=ย่อ/ขยาย>▾</button></div><div class="cb"><div class="chart" style="height:240px"><canvas id="chRegion"></canvas></div><div id="tRegion" style="margin-top:12px"></div></div></section>
 <section class="card "><div class="ch"><h2>Performance by VAS · MESH · CCTV · Content · TRUE ID<span class=sub>TRUE ID = TRUEIDTV + TRUEID</span></h2><button class=tg aria-label=ย่อ/ขยาย>▾</button></div><div class="cb"><div class="two"><div class="chart"><canvas id="chCat"></canvas></div><div id="tCat"></div></div></div></section>
@@ -250,6 +251,7 @@ thead th{background:var(--surface2)}
 </div>
 <div class="grid tabp" id="p-area" hidden>
 <section class="card "><div class="ch"><h2>Performance by Area<span class=sub id="areaSub">% Achievement และ % Runrate</span></h2><button class=tg aria-label=ย่อ/ขยาย>▾</button></div><div class="cb"><div class="chart tall"><canvas id="chArea"></canvas></div></div></section>
+<section class="card"><div class="ch"><h2>Area × Category<span class=sub>ยอดขายแต่ละ Area แยกตาม VAS · MESH · CCTV · Content · TRUE ID</span></h2><button class=tg aria-label=ย่อ/ขยาย>▾</button></div><div class="cb"><div id="tAreaCat"></div></div></section>
 <section class="card "><div class="ch"><h2>Area Table<span class=sub>แสดงครบทุก Area</span></h2><button class=tg aria-label=ย่อ/ขยาย>▾</button></div><div class="cb"><div id="tArea"></div></div></section>
 </div>
 <div class="grid tabp" id="p-shop" hidden>
@@ -261,8 +263,9 @@ thead th{background:var(--surface2)}
 <div class="card pdtbar"><div class="pdtin"><label class="pdtl">PDT · ระดับผลงานพนักงาน<div id="fPdt"></div></label><span class="pdtn" id="pdtNote">เลือกได้หลายระดับ · ใช้กับทุกส่วนในแท็บ By Staff</span></div></div>
 <section class="card"><div class="ch"><h2>1 · No Sales Analysis<span class="sub">by Area, Shop Type &amp; Shop Name</span></h2><div class="seg" id="nsDim"><button class="on" data-m="ar">Area</button><button data-m="ty">Shop Type</button><button data-m="shop">Shop Name</button></div></div><div class="cb"><div class="chart tall"><canvas id="chNS"></canvas></div><div class="note" id="nsNote"></div><div id="tNS" style="margin-top:12px"></div></div></section>
 <section class="card"><div class="ch"><h2>2 · Performance Distribution<span class="sub">Above Average · Average · Below Average · No Sales</span></h2><button class="tg" aria-label="ย่อ/ขยาย">▾</button></div><div class="cb"><div class="two"><div><h3>จำนวนพนักงานตามระดับผลงาน</h3><div class="chart" style="height:260px"><canvas id="chDist1"></canvas></div></div><div><h3>การกระจายยอดขายต่อคน (เทียบค่าเฉลี่ย)</h3><div class="chart" style="height:260px"><canvas id="chDist2"></canvas></div></div></div><h3 style="margin:16px 0 8px">สัดส่วนระดับผลงานแยกตาม Area</h3><div class="chart tall"><canvas id="chStaffMix"></canvas></div><div class="note" id="mixNote"></div><div id="tMix" style="margin-top:12px"></div></div></section>
-<section class="card"><div class="ch"><h2>3 · Detailed Performance Table<span class="sub">พนักงานทุกคนที่มีเป้าหรือมียอด</span></h2><button class="tg" aria-label="ย่อ/ขยาย">▾</button></div><div class="cb"><div id="tStaff"></div></div></section>
-<section class="card"><div class="ch"><h2>4 · ข้อมูลเชิงลึกสำหรับผู้บริหาร<span class="sub">สร้างอัตโนมัติจากข้อมูลตามตัวกรองที่เลือก</span></h2><button class="tg" aria-label="ย่อ/ขยาย">▾</button></div><div class="cb"><div class="ins" id="staffIns"></div><h3 style="margin:16px 0 8px;font-size:14px">ข้อเสนอแนะ</h3><ol class="rec" id="staffRecs"></ol></div></section>
+<section class="card"><div class="ch"><h2>3 · Area × Performance Distribution<span class=sub>จำนวนและ % พนักงานในแต่ละระดับผลงาน แยกตาม Area</span></h2><button class=tg aria-label=ย่อ/ขยาย>▾</button></div><div class="cb"><div id="tAreaPd"></div></div></section>
+<section class="card"><div class="ch"><h2>4 · Detailed Performance Table<span class="sub">พนักงานทุกคนที่มีเป้าหรือมียอด</span></h2><button class="tg" aria-label="ย่อ/ขยาย">▾</button></div><div class="cb"><div id="tStaff"></div></div></section>
+<section class="card"><div class="ch"><h2>5 · ข้อมูลเชิงลึกสำหรับผู้บริหาร<span class="sub">สร้างอัตโนมัติจากข้อมูลตามตัวกรองที่เลือก</span></h2><button class="tg" aria-label="ย่อ/ขยาย">▾</button></div><div class="cb"><div class="ins" id="staffIns"></div><h3 style="margin:16px 0 8px;font-size:14px">ข้อเสนอแนะ</h3><ol class="rec" id="staffRecs"></ol></div></section>
 </div>
 <div class="grid tabp" id="p-campaign" hidden>
 <section class="card"><div class="ch"><h2>Campaign Ranking<span class="sub">เรียงตามจำนวนการขาย (Qty) เดือนนี้</span></h2><div class="seg" id="cpCat"><button class="on" data-m="all">ทั้งหมด</button><button data-m="2">CCTV</button><button data-m="3">Content</button><button data-m="1">MESH</button><button data-m="4">TRUE ID</button><button data-m="0">VAS</button></div></div><div class="cb"><div class="chart tall"><canvas id="chCamp"></canvas></div><div class="note" id="campNote"></div></div></section>
@@ -803,6 +806,32 @@ function catRows(){
 const dsCat=()=>{const rows=catRows();const t=rows.reduce((a,r)=>({qty:a.qty+r.qty,act:a.act+r.act,rr:a.rr+r.rr,pQty:a.pQty+r.pQty,pAct:a.pAct+r.pAct,pFull:a.pFull+r.pFull,pFullQty:a.pFullQty+r.pFullQty}),{qty:0,act:0,rr:0,pQty:0,pAct:0,pFull:0,pFullQty:0});
   return{cols:[{k:'name',l:'Category',t:'s'},{k:'qty',l:'Qty',t:'n'},{k:'act',l:'Revenue',t:'n'},{k:'share',l:'Share',t:'p'},{k:'rr',l:'Runrate',t:'n'},{k:'pQty',l:'Qty เดือนก่อน (MTD)',t:'n'},{k:'pAct',l:'Rev เดือนก่อน (MTD)',t:'n'},{k:'momQ',l:'MOM Qty',t:'g'},{k:'mom',l:'MOM Rev',t:'g'},{k:'pFull',l:'Rev เดือนก่อน (เต็มเดือน)',t:'n'},{k:'avg',l:'฿/รายการ',t:'d'}],rows,
   total:{qty:t.qty,act:t.act,share:1,rr:t.rr,pQty:t.pQty,pAct:t.pAct,momQ:growth(t.qty,t.pQty),mom:growth(t.act,t.pAct),pFull:t.pFull,avg:t.qty?t.act/t.qty:NaN}}};
+function catDateDs(){
+  const set=new Set(scope.shops.map(s=>s.i)),Q=UI.metric==='qty',E=cal.E;
+  const M=CATS.map(()=>new Array(E+1).fill(0));
+  for(const x of D.sales){if(x[0]!==cal.cm||x[1]>E||!set.has(x[2]))continue;M[x[4]][x[1]]+=Q?1:x[5]}
+  const cols=[{k:'name',l:'Category',t:'s'}];for(let d=1;d<=E;d++)cols.push({k:'d'+d,l:String(d),t:'n'});cols.push({k:'tot',l:'Total',t:'n'});
+  const rows=CATS.map((n,i)=>{const o={name:n,tot:0};for(let d=1;d<=E;d++){o['d'+d]=M[i][d];o.tot+=M[i][d]}return o});
+  const total={tot:0};for(let d=1;d<=E;d++){total['d'+d]=rows.reduce((a,r)=>a+r['d'+d],0);total.tot+=total['d'+d]}
+  return{cols,rows,total};
+}
+function areaCatDs(){
+  const Q=UI.metric==='qty',v=k=>Q?k.qty:k.act;
+  const rows=scope.areaRows.map(a=>{const o={name:a.name,rg:a.rg,tot:0};CATS.forEach((n,i)=>{o['c'+i]=v(a.rec.cat[i]);o.tot+=o['c'+i]});return o});
+  const total={tot:0};CATS.forEach((n,i)=>{total['c'+i]=rows.reduce((a,r)=>a+r['c'+i],0);total.tot+=total['c'+i]});
+  return{cols:[{k:'name',l:'Area',t:'s'},{k:'rg',l:'Region',t:'s'},...CATS.map((n,i)=>({k:'c'+i,l:n,t:'n'})),{k:'tot',l:'Total',t:'n'}],rows,total};
+}
+function areaPdDs(){
+  const el=scope.staffAll||[],g=new Map();
+  el.forEach(x=>{if(!g.has(x.ar))g.set(x.ar,{name:x.ar,rg:x.rg,head:0,c:[0,0,0,0]});const o=g.get(x.ar);o.head++;o.c[x.ci]++});
+  const mk=o=>{const r={name:o.name,rg:o.rg,head:o.head,sell:ratio(o.head-o.c[3],o.head)};['a','m','b','n'].forEach((p,i)=>{r[p]=o.c[i];r[p+'p']=ratio(o.c[i],o.head)});return r};
+  const rows=[...g.values()].map(mk).sort((a,b)=>a.name.localeCompare(b.name));
+  const t={name:'รวม',rg:'',head:0,c:[0,0,0,0]};g.forEach(o=>{t.head+=o.head;o.c.forEach((c,i)=>t.c[i]+=c)});
+  const L=['Above Average','Average','Below Average','No Sales'],K=['a','m','b','n'];
+  const cols=[{k:'name',l:'Area',t:'s'},{k:'rg',l:'Region',t:'s'},{k:'head',l:'Staff',t:'n'}];
+  K.forEach((p,i)=>{cols.push({k:p,l:L[i],t:'n'});cols.push({k:p+'p',l:L[i]+' %',t:'p'})});cols.push({k:'sell',l:'% มียอด',t:'p'});
+  return{cols,rows,total:mk(t)};
+}
 function rankDs(rows,mode,top,staff){
   let r=rows;
   const key=mode==='ach'&&tgOn()?'ach':'act';
@@ -1204,6 +1233,7 @@ function renderStaff(){
   classify();
   table('tNS',$('#tNS'),dsNS(UI.ns),{sort:'ns'});
   table('tMix',$('#tMix'),mixDs(),{simple:true,sort:'name',dir:1});
+  table('tAreaPd',$('#tAreaPd'),areaPdDs(),{sort:'name',dir:1,full:true});
   $('#mixNote').textContent=`ค่าเฉลี่ยต่อคน (เฉพาะพนักงานที่มียอด) = ${CUR()}${f0(scope.mixAvg)}${UI.metric==='qty'?' รายการ':''} · Above Average = มากกว่า 120% ของค่าเฉลี่ย · Average = 80–120% · Below Average = ต่ำกว่า 80% · No Sales = ไม่มียอด · นับพนักงานที่มีเป้าหรือมียอด`;
   table('tStaff',$('#tStaff'),dsStaff(),{sort:'act'});
   staffInsights();
@@ -1705,7 +1735,7 @@ function renderAll(){
   document.querySelectorAll('[data-tg]').forEach(b=>{b.hidden=!tgOn();if(b.hidden&&b.classList.contains('on')){b.classList.remove('on');b.parentNode.querySelector('button').classList.add('on');UI[b.parentNode.id]='act'}});
   computeScope();renderKPIs();buildInsights();renderStaff();if(UI.tab==='kit')renderKit();
   table('tRegion',$('#tRegion'),dsRegion(),{simple:true,sort:'act'});
-  table('tArea',$('#tArea'),dsArea(),{sort:'act',full:true});
+  table('tArea',$('#tArea'),dsArea(),{sort:'act',full:true});table('tAreaCat',$('#tAreaCat'),areaCatDs(),{sort:'tot',full:true});table('tCatDate',$('#tCatDate'),catDateDs(),{simple:true,sort:'tot'});
   table('tShop',$('#tShop'),dsShop(),{sort:'act'});
   renderCampaign();
   table('tCat',$('#tCat'),dsCat(),{simple:true,sort:'act'});
