@@ -102,6 +102,11 @@ thead th{position:sticky}.cg{position:absolute;top:0;right:0;width:7px;height:10
 .ttl h1{display:flex;align-items:center;gap:10px}.ttl h1 .logo{width:34px;height:34px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;background:rgba(255,255,255,.18);flex:none}.ttl h1 .logo .ic{width:19px;height:19px;margin:0}
 #gform>svg{width:54px;height:54px;padding:13px;border-radius:16px;color:#fff;background:linear-gradient(135deg,var(--s1),#7c4ddb);box-shadow:0 8px 24px rgba(91,91,214,.35)}
 .in h3 .ic{width:1em;height:1em}
+.ms{position:relative;min-width:130px;max-width:230px}.ms-b{width:100%;height:34px;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:0 10px;display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;font:inherit;color:inherit;text-align:left}.ms-b span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ms-b i{font-style:normal;opacity:.6;font-size:11px}
+#hdr .ms-b{background:rgba(255,255,255,.95);color:#161a33;border-color:transparent}
+.ms-p{position:absolute;top:38px;left:0;z-index:80;min-width:100%;width:max-content;max-width:min(340px,90vw);max-height:340px;overflow:auto;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,.28);padding:6px}.ms-p[hidden]{display:none}
+.ms-p label{display:flex;gap:8px;align-items:center;padding:6px 8px;border-radius:6px;cursor:pointer;font-size:13px;white-space:nowrap;color:var(--ink)}.ms-p label:hover{background:var(--surface2)}.ms-p .ms-all{border-bottom:1px solid var(--line);margin-bottom:4px;font-weight:600;border-radius:6px 6px 0 0}
+.pdtbar{padding:10px 14px}.pdtin{display:flex;align-items:center;gap:14px;flex-wrap:wrap}.pdtl{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600}.pdtn{font-size:12px;color:var(--ink2)}
 .xhead{border:1px solid var(--line);border-left:4px solid var(--info,#6366f1);border-radius:10px;padding:12px 14px;background:var(--surface2);margin-bottom:12px}.xhead.good{border-left-color:var(--good)}.xhead.warn{border-left-color:var(--warn)}.xhead.crit{border-left-color:var(--crit)}.xhead p{margin:8px 0 0;font-size:14px;line-height:1.7;color:var(--ink)}
 .xkpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(170px,100%),1fr));gap:10px;margin-bottom:6px}.xk{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface)}.xk span{display:block;font-size:12px;color:var(--ink2)}.xk b{display:block;font-size:20px;margin:2px 0}.xk i{font-style:normal;font-size:12px;color:var(--ink2)}.xk.good b{color:var(--good)}.xk.warn b{color:var(--warn)}.xk.crit b{color:var(--crit)}
 .xh{margin:22px 0 6px;font-size:14px}.xn{margin:0 0 8px;font-size:13px;color:var(--ink2)}.xl{margin:0;padding-left:20px;display:grid;gap:8px;font-size:13px;color:var(--ink2)}.xl b{color:var(--ink)}
@@ -198,9 +203,9 @@ thead th{background:var(--surface2)}
     <div class="flt">
       <label>เดือน<select id="fMo"></select></label>
       <div class="seg" id="metSeg" role="group" aria-label="มุมมอง"><button data-m="rev" class="on">Revenue (฿)</button><button data-m="qty">QTY</button></div>
-      <label>Region<select id="fRg"></select></label>
-      <label>Area<select id="fAr"></select></label>
-      <label>Shop Type<select id="fTy"></select></label>
+      <label>Region<div id="fRg"></div></label>
+      <label>Area<div id="fAr"></div></label>
+      <label>Shop Type<div id="fTy"></div></label>
       <button class="btn" id="fReset">ล้างตัวกรอง</button>
       <button class="btn pri" id="xAll">Export Excel (ทั้งหมด)</button>
       <button class="btn" id="rfBtn" style="display:none">รีเฟรชข้อมูล</button>
@@ -233,6 +238,7 @@ thead th{background:var(--surface2)}
 <section class="card "><div class="ch"><h2>Shop Table<span class=sub>ทุกร้านใน Shop list</span></h2><button class=tg aria-label=ย่อ/ขยาย>▾</button></div><div class="cb"><div id="tShop"></div></div></section>
 </div>
 <div class="grid tabp" id="p-staff" hidden>
+<div class="card pdtbar"><div class="pdtin"><label class="pdtl">PDT · ระดับผลงานพนักงาน<div id="fPdt"></div></label><span class="pdtn" id="pdtNote">เลือกได้หลายระดับ · ใช้กับทุกส่วนในแท็บ By Staff</span></div></div>
 <section class="card"><div class="ch"><h2>1 · No Sales Analysis<span class="sub">by Area, Shop Type &amp; Shop Name</span></h2><div class="seg" id="nsDim"><button class="on" data-m="ar">Area</button><button data-m="ty">Shop Type</button><button data-m="shop">Shop Name</button></div></div><div class="cb"><div class="chart tall"><canvas id="chNS"></canvas></div><div class="note" id="nsNote"></div><div id="tNS" style="margin-top:12px"></div></div></section>
 <section class="card"><div class="ch"><h2>2 · Performance Distribution<span class="sub">Above Average · Average · Below Average · No Sales</span></h2><button class="tg" aria-label="ย่อ/ขยาย">▾</button></div><div class="cb"><div class="two"><div><h3>จำนวนพนักงานตามระดับผลงาน</h3><div class="chart" style="height:260px"><canvas id="chDist1"></canvas></div></div><div><h3>การกระจายยอดขายต่อคน (เทียบค่าเฉลี่ย)</h3><div class="chart" style="height:260px"><canvas id="chDist2"></canvas></div></div></div><h3 style="margin:16px 0 8px">สัดส่วนระดับผลงานแยกตาม Area</h3><div class="chart tall"><canvas id="chStaffMix"></canvas></div><div class="note" id="mixNote"></div><div id="tMix" style="margin-top:12px"></div></div></section>
 <section class="card"><div class="ch"><h2>3 · Detailed Performance Table<span class="sub">พนักงานทุกคนที่มีเป้าหรือมียอด</span></h2><button class="tg" aria-label="ย่อ/ขยาย">▾</button></div><div class="cb"><div id="tStaff"></div></div></section>
@@ -296,7 +302,7 @@ const fp=(n,d=1)=>isFinite(n)?(n*100).toFixed(d)+'%':'–';
 const fg=(n,d=1)=>isFinite(n)?(n>=0?'▲ +':'▼ ')+(n*100).toFixed(d)+'%':'–';
 const ratio=(a,b)=>b>0?a/b:NaN;
 const growth=(a,b)=>b>0?a/b-1:NaN;
-let D,SH,ST,cal,shopRec,staffRec,scope,charts={},F={rg:'',ar:'',ty:''},UI={rkShop:'act',rkStaff:'act',rq:'cat',tr:'daily',ns:'ar',camp:'all',metric:'rev',month:0};
+let D,SH,ST,cal,shopRec,staffRec,scope,charts={},F={rg:[],ar:[],ty:[]},UI={pdt:[],rkShop:'act',rkStaff:'act',rq:'cat',tr:'daily',ns:'ar',camp:'all',metric:'rev',month:0};
 
 /* ---------- crypto / gate ---------- */
 const te=new TextEncoder(),td=new TextDecoder(),ITER=150000;
@@ -501,7 +507,7 @@ async function publishData(data,pubPw,admPw,statEl,done){
     else{mode='local';browserSave('data.json',JSON.stringify(P),'application/json')}
     PENDIV=PAY&&PAY.data?PAY.data.iv:'';PENDUNTIL=Date.now()+(mode==='gh'?6*60000:0);
     PAY=P;LASTIV=P.data.iv;D=data;ADM={pw:admPw,pubPw};
-    UI.month=0;initModel();F={rg:'',ar:'',ty:''};fillFilters();$('#fRg').value='';$('#fTy').value='';renderAll();renderAdmin();
+    UI.month=0;initModel();F={rg:[],ar:[],ty:[]};fillFilters();renderAll();renderAdmin();
     setStat(statEl,mode==='gh'?'อัปโหลดขึ้น GitHub เรียบร้อย ผู้ใช้ทุกคนจะเห็นข้อมูลใหม่ภายใน 1–2 นาที (ตามรอบอัปเดตของ GitHub Pages)':mode==='local'?'ยังไม่ได้เชื่อมต่อ GitHub (ใส่ Token ครั้งเดียวในการ์ด "เชื่อมต่อ GitHub" ด้านล่าง) จึงอัปขึ้นเองไม่ได้ ได้ดาวน์โหลดไฟล์ data.json ให้แล้ว':(done||'บันทึกเรียบร้อย ผู้ใช้ทุกคนจะเห็นข้อมูลใหม่'),mode==='local'?'':'ok');
   }catch(e){
     const c=e&&e.code;
@@ -604,10 +610,7 @@ async function checkLive(manual){
     try{r=await openPayload(P,ADM.pw)}
     catch(e){clearInterval(LIVET);store.del(SK_S);flash('มีการเปลี่ยนรหัสผ่านหรือข้อมูลใหม่ กรุณาเข้าสู่ระบบอีกครั้ง');setTimeout(()=>location.reload(),2500);return}
     LASTIV=P.data.iv;PAY=P;D=r.data;ROLE=r.role;ADM.pubPw=r.pubPw;
-    const keep={rg:F.rg,ar:F.ar,ty:F.ty};
     initModel();fillFilters();
-    F=keep;if(!SH.some(x=>x.rg===F.rg))F.rg='';$('#fRg').value=F.rg;fillAreas();if(!SH.some(x=>x.ar===F.ar))F.ar='';$('#fAr').value=F.ar;
-    if(!SH.some(x=>x.ty===F.ty))F.ty='';$('#fTy').value=F.ty;
     renderAll();if(UI.tab==='admin')renderAdmin();
     flash('อัปเดตข้อมูลล่าสุดแล้ว (ข้อมูล ณ '+D.asof+')');
   }catch(e){if(manual===true)flash('รีเฟรชไม่สำเร็จ ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่')}finally{LIVEBUSY=false;if(rb){rb.disabled=false;rb.lastChild.textContent='รีเฟรชข้อมูล'}}
@@ -622,31 +625,49 @@ function syncSegs(){
 }
 function boot(){
   const v=loadView();
-  if(v&&v.UI){Object.assign(UI,v.UI);if(v.F)F={rg:v.F.rg||'',ar:v.F.ar||'',ty:v.F.ty||''}}
+  if(v&&v.UI){Object.assign(UI,v.UI);if(v.F){const A=x=>Array.isArray(x)?x:(x?[x]:[]);F={rg:A(v.F.rg),ar:A(v.F.ar),ty:A(v.F.ty)}}}
+  if(!Array.isArray(UI.pdt))UI.pdt=[];
   startLive();initModel();$('#tabAdmin').hidden=ROLE!=='adm';fillFilters();
-  if(!SH.some(x=>x.rg===F.rg))F.rg='';if(!SH.some(x=>x.ty===F.ty))F.ty='';if(!SH.some(x=>x.ar===F.ar))F.ar='';
-  $('#fRg').value=F.rg;$('#fTy').value=F.ty;fillAreas();$('#fAr').value=F.ar;
   bindUI();syncSegs();showTab(UI.tab||'overall');renderAll();
   if(v&&v.y)requestAnimationFrame(()=>window.scrollTo(0,v.y));
 }
 
 /* ---------- filters ---------- */
 function opts(sel,vals,all){sel.innerHTML=`<option value="">${all}</option>`+vals.map(v=>`<option>${esc(v)}</option>`).join('')}
+const MSEL={};
+function msel(id,all,onch){
+  if(MSEL[id])return MSEL[id];const old=document.getElementById(id);if(!old)return null;
+  const w=document.createElement('div');w.className='ms';w.id=id;w.innerHTML='<button type="button" class="ms-b" aria-haspopup="true" aria-expanded="false"><span></span><i>▾</i></button><div class="ms-p" hidden></div>';old.replaceWith(w);
+  const b=w.firstChild,p=w.lastChild,o={all,opts:[],sel:[],el:w,onch};MSEL[id]=o;
+  const lab=()=>{b.firstChild.textContent=!o.sel.length?all:o.sel.length<=2?o.sel.join(', '):o.sel.length+' รายการ';const a=p.querySelector('.ms-all input');if(a)a.checked=!o.sel.length};
+  o.build=()=>{const s=new Set(o.sel);p.innerHTML=`<label class="ms-all"><input type="checkbox"> ${esc(all)}</label>`+o.opts.map((v,i)=>`<label><input type="checkbox" data-i="${i}" ${s.has(v)?'checked':''}> ${esc(v)}</label>`).join('');
+    p.querySelector('.ms-all input').onchange=()=>{o.sel=[];p.querySelectorAll('input[data-i]').forEach(c=>c.checked=false);lab();o.onch(o.sel)};
+    p.querySelectorAll('input[data-i]').forEach(c=>c.onchange=()=>{const v=o.opts[+c.dataset.i];o.sel=c.checked?[...o.sel,v]:o.sel.filter(x=>x!==v);lab();o.onch(o.sel)});lab()};
+  o.set=(opts,sel)=>{o.opts=opts;o.sel=(sel||o.sel).filter(v=>opts.includes(v));o.build();return o.sel};
+  const closeAll=()=>Object.values(MSEL).forEach(x=>{x.el.lastChild.hidden=true;x.el.firstChild.setAttribute('aria-expanded','false')});
+  b.onclick=e=>{e.stopPropagation();const open=p.hidden;closeAll();p.hidden=!open;b.setAttribute('aria-expanded',String(open))};
+  p.onclick=e=>e.stopPropagation();o.close=closeAll;return o}
+document.addEventListener('click',()=>Object.values(MSEL).forEach(x=>{x.el.lastChild.hidden=true;x.el.firstChild.setAttribute('aria-expanded','false')}));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')Object.values(MSEL).forEach(x=>{x.el.lastChild.hidden=true})});
+function ensureMs(){
+  msel('fRg','ทั้งหมด',v=>{F.rg=v;fillAreas();renderAll()});
+  msel('fAr','ทั้งหมด',v=>{F.ar=v;renderAll()});
+  msel('fTy','ทั้งหมด',v=>{F.ty=v;renderAll()});
+  msel('fPdt','ทั้งหมด',v=>{UI.pdt=v;renderAll()});
+}
 function fillFilters(){
-  const u=a=>[...new Set(a)].sort();
-  opts($('#fRg'),u(SH.map(s=>s.rg)),'ทั้งหมด');
-  opts($('#fTy'),u(SH.map(s=>s.ty)),'ทั้งหมด');
+  ensureMs();const u=a=>[...new Set(a)].sort();
+  F.rg=MSEL.fRg.set(u(SH.map(s=>s.rg)),F.rg);
+  F.ty=MSEL.fTy.set(u(SH.map(s=>s.ty)),F.ty);
+  UI.pdt=MSEL.fPdt.set(CLS.slice(),UI.pdt);
   fillAreas();
 }
 function fillMonths(ml){const el=$('#fMo');el.innerHTML=ml.map(x=>`<option value="${x.m}">${TH_M[x.m-1]} ${x.y+543}</option>`).join('');el.value=UI.month}
-function fillAreas(){opts($('#fAr'),[...new Set(SH.filter(s=>!F.rg||s.rg===F.rg).map(s=>s.ar))].sort(),'ทั้งหมด');$('#fAr').value=F.ar}
+function fillAreas(){ensureMs();F.ar=MSEL.fAr.set([...new Set(SH.filter(s=>!F.rg.length||F.rg.includes(s.rg)).map(s=>s.ar))].sort(),F.ar)}
 function bindUI(){
   $('#fMo').onchange=e=>{UI.month=+e.target.value;initModel();renderAll()};
   document.querySelectorAll('#metSeg button').forEach(b=>b.onclick=()=>{UI.metric=b.dataset.m;document.querySelectorAll('#metSeg button').forEach(x=>x.classList.toggle('on',x===b));initModel();renderAll()});
-  $('#fRg').onchange=e=>{F.rg=e.target.value;F.ar='';fillAreas();renderAll()};
-  $('#fAr').onchange=e=>{F.ar=e.target.value;renderAll()};
-  $('#fTy').onchange=e=>{F.ty=e.target.value;renderAll()};
-  $('#fReset').onclick=()=>{F={rg:'',ar:'',ty:''};$('#fRg').value='';$('#fTy').value='';fillAreas();renderAll()};
+  $('#fReset').onclick=()=>{F={rg:[],ar:[],ty:[]};UI.pdt=[];fillFilters();renderAll()};
   document.querySelectorAll('.tg').forEach(b=>b.onclick=()=>{const body=b.closest('.card').querySelector('.cb');body.hidden=!body.hidden;b.textContent=body.hidden?'▸':'▾'});
   const seg=(id,key)=>document.querySelectorAll(id+' button').forEach(b=>b.onclick=()=>{document.querySelectorAll(id+' button').forEach(x=>x.classList.toggle('on',x===b));UI[key]=b.dataset.m;renderAll()});
   seg('#rkShop','rkShop');seg('#nsDim','ns');seg('#cpCat','camp');seg('#rqDim','rq');seg('#trTab','tr');
@@ -660,7 +681,7 @@ function bindUI(){
 /* ---------- row builders ---------- */
 function rowFrom(r,o){const rr=rrOf(r);return{...o,tg:r.tg,tg0:r.tg0,rv:r.rv,act:r.act,qty:r.qty,ach:ratio(r.act,r.tg),rr,rrach:ratio(rr,r.tg),gap:r.tg-r.act,pAct:r.pAct,mom:growth(r.act,r.pAct)}}
 function computeScope(){
-  const inS=s=>(!F.rg||s.rg===F.rg)&&(!F.ar||s.ar===F.ar)&&(!F.ty||s.ty===F.ty);
+  const inS=s=>(!F.rg.length||F.rg.includes(s.rg))&&(!F.ar.length||F.ar.includes(s.ar))&&(!F.ty.length||F.ty.includes(s.ty));
   const shops=SH.filter(inS);const staff=ST.filter(s=>inS(SH[s.sh]));
   const rec=sumRecs(shops.map(s=>shopRec[s.i]));
   scope={shops,staff,rec,rr:rrOf(rec)};
@@ -1072,7 +1093,10 @@ function classify(){
   const el=scope.staffRows.filter(elig),sell=el.filter(x=>x.act>0);
   const avg=sell.length?sell.reduce((a,x)=>a+x.act,0)/sell.length:0;scope.mixAvg=avg;
   el.forEach(x=>{x.ci=x.act===0?3:x.act>=avg*1.2?0:x.act>=avg*.8?1:2;x.cls=CLS[x.ci]});
-  scope.staffEl=el;
+  scope.staffAll=el;
+  const pd=(UI.pdt||[]).map(n=>CLS.indexOf(n)).filter(i=>i>=0);
+  scope.staffEl=pd.length?el.filter(x=>pd.includes(x.ci)):el;
+  const pn=$('#pdtNote');if(pn)pn.textContent=pd.length?`กรองแล้ว: แสดง ${f0(scope.staffEl.length)} จาก ${f0(el.length)} คน · ค่าเฉลี่ยอ้างอิงจากพนักงานทั้งหมดในขอบเขตที่เลือก`:'เลือกได้หลายระดับ · ใช้กับทุกส่วนในแท็บ By Staff';
 }
 function mixDs(){
   const el=scope.staffEl,g=new Map();
@@ -1676,7 +1700,7 @@ function exportAll(){
   if(!window.XLSX){flash('โหลดตัวสร้าง Excel ไม่สำเร็จ ใช้ปุ่ม Export CSV ของแต่ละตารางแทน');return}
   const wb=XLSX.utils.book_new();const add=(n,aoa)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aoa),n);
   const r=scope.rec;
-  add('Summary',[['ตัวกรอง',`Region=${F.rg||'ทั้งหมด'} | Area=${F.ar||'ทั้งหมด'} | Type=${F.ty||'ทั้งหมด'}`],['ข้อมูล ณ',D.asof],['Target',Math.round(r.tg)],['Actual',Math.round(r.act)],['Runrate',Math.round(scope.rr)],['%Ach',+(ratio(r.act,r.tg)*100).toFixed(2)],['RR %Ach',+(ratio(scope.rr,r.tg)*100).toFixed(2)],['GAP to Target',Math.round(r.tg-r.act)],['MOM Growth % (MTD)',+(growth(r.act,r.pAct)*100).toFixed(2)],['Active Shops',scope.shops.filter(s=>shopRec[s.i].act>0).length],['Total Shops',scope.shops.length],['Active Staff',scope.staff.filter(s=>staffRec[s.i].act>0).length],['No Sale Staff',scope.staff.filter(s=>s.tg>0&&staffRec[s.i].act===0).length]]);
+  add('Summary',[['ตัวกรอง',`Region=${F.rg.join(',')||'ทั้งหมด'} | Area=${F.ar.join(',')||'ทั้งหมด'} | Type=${F.ty.join(',')||'ทั้งหมด'}`],['ข้อมูล ณ',D.asof],['Target',Math.round(r.tg)],['Actual',Math.round(r.act)],['Runrate',Math.round(scope.rr)],['%Ach',+(ratio(r.act,r.tg)*100).toFixed(2)],['RR %Ach',+(ratio(scope.rr,r.tg)*100).toFixed(2)],['GAP to Target',Math.round(r.tg-r.act)],['MOM Growth % (MTD)',+(growth(r.act,r.pAct)*100).toFixed(2)],['Active Shops',scope.shops.filter(s=>shopRec[s.i].act>0).length],['Total Shops',scope.shops.length],['Active Staff',scope.staff.filter(s=>staffRec[s.i].act>0).length],['No Sale Staff',scope.staff.filter(s=>s.tg>0&&staffRec[s.i].act===0).length]]);
   add('Insights',[['ระดับ','หัวข้อ','รายละเอียด'],...scope.ins.map(i=>[i.c,i.t,i.b]),[],['ข้อเสนอแนะ'],...scope.recs.map(x=>[x])]);
   const sets={Region:dsRegion(),Area:dsArea(),Shop:dsShop(),Staff_Detail:dsStaff(),Category:dsCat(),Staff_Mix_Area:mixDs(),NoSales_Area:dsNS('ar'),NoSales_ShopType:dsNS('ty'),NoSales_Shop:dsNS('shop'),NoSales_TopShops:dsNSTop(),AP_Region_ShopType:AP[0](),AP_Area_ShopType:AP[1](),AP_Function:AP[2](),AP_Region:AP[3](),AP_Area:AP[4](),AP_Shop:AP[5]()};
   if(D.camps){const c=dsCamp();c.rows=c.all;sets.Campaign=c}
