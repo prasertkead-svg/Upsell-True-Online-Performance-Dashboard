@@ -282,6 +282,23 @@ thead th{background:var(--surface2)}
 <div class="stat" id="smsInfo"></div>
 <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn pri" id="smsCopy" type="button">คัดลอกข้อความ</button><button class="btn" id="smsGen" type="button">สร้างใหม่จากข้อมูลล่าสุด</button></div>
 <p class="note">%RR Ach = Runrate คาดปิดสิ้นเดือน (฿) ÷ เป้าหมายเดือน · เรียงอันดับเฉพาะ Area ที่มีเป้าหมาย · Staff No Sale = พนักงานประเภท Retention (Ret_*) และ Multi (RR_Multi) ที่มีเป้าแต่ยังไม่มียอดเดือนนี้ ตัวเลข % = สัดส่วนต่อพนักงานกลุ่มนี้ใน Area · ตัวย่อ Area: N=North, S=South, E=East, W=West, C=Central, U=Upper, L=Lower (เช่น BMA1 NW = BMA I - North West, UPC LNE = UPC - Lower Northeast) · แคมเปญเรียงตามจำนวนขาย (Qty) · ตัวเลขไม่ขึ้นกับตัวกรองหรือมุมมอง Revenue/QTY</p></div></section>
+<section class="card c12" id="uaCard"><div class="ch"><h2>Admin · สถิติการเข้าใช้งาน<span class="sub">ผู้เข้าใช้ · สิ่งที่คลิก · พื้นที่ · วิเคราะห์รายวัน</span></h2></div><div class="cb">
+<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:10px"><label class="fld" style="margin:0">วันที่<input type="date" id="uaDay"></label><label style="display:flex;gap:6px;align-items:center;font-size:13px"><input type="checkbox" id="uaEx" checked>ไม่นับ Admin</label><button class="btn pri" id="uaLoad" type="button">โหลดสถิติ</button></div>
+<div class="stat" id="uaStat"></div>
+<div class="kpis" id="uaKpi"></div>
+<h3 style="margin:14px 0 6px">วิเคราะห์</h3><ul class="note" id="uaIns" style="line-height:1.8;padding-left:18px;margin:0"></ul>
+<div class="two" style="margin-top:14px"><div><h3>ผู้ใช้รายชั่วโมง (เวลาไทย)</h3><div id="uaHour"></div></div><div><h3>แท็บที่เปิดดู</h3><div id="uaTab"></div></div></div>
+<div class="two" style="margin-top:14px"><div><h3>สิ่งที่คลิกมากสุด</h3><div id="uaClick"></div></div><div><h3>Area ที่ถูกเลือกดู</h3><div id="uaArea"></div></div></div>
+<div class="two" style="margin-top:14px"><div><h3>Region ที่ถูกเลือกดู</h3><div id="uaRegion"></div></div><div><h3>อุปกรณ์</h3><div id="uaDev"></div></div></div>
+<div style="margin-top:14px"><div><h3>ตำแหน่งผู้ใช้โดยประมาณ (เขตเวลา)</h3><div id="uaTz"></div></div></div>
+<div style="margin-top:14px"><div><h3>กิจกรรมล่าสุด (300 รายการ)</h3><div id="uaLog"></div></div></div>
+<p class="note">ไม่เก็บชื่อ/เบอร์/IP · ระบุผู้ใช้ด้วยรหัสสุ่มในเบราว์เซอร์ · "พื้นที่" = Region/Area ที่ผู้ใช้เลือกกรองตอนดูข้อมูล เพราะรหัสเข้าใช้ร่วมกันทุกคน จึงระบุตัวตนรายบุคคลไม่ได้</p>
+<details id="uaSetup" style="margin-top:12px"><summary style="cursor:pointer;font-weight:600">ตั้งค่าการเก็บสถิติ (ทำครั้งเดียว)</summary>
+<ol class="note" style="line-height:1.8;padding-left:18px"><li>สร้าง Google Sheet ใหม่ → Extensions → Apps Script</li><li>ตั้งรหัสลับ (ช่องด้านล่าง) แล้วคัดลอกสคริปต์ไปวางแทนโค้ดเดิม → Deploy → New deployment → Web app → Execute as: <b>Me</b> · Who has access: <b>Anyone</b></li><li>คัดลอก Web app URL (ลงท้าย /exec) มาวางด้านล่าง แล้วกดบันทึก — จากนั้นส่ง URL ให้ผู้พัฒนาฝังในหน้าเว็บเพื่อให้ผู้ใช้ทุกคนถูกบันทึก</li></ol>
+<div style="display:grid;gap:8px;grid-template-columns:1fr 1fr"><label class="fld" style="margin:0">Web app URL<input id="uaUrl" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off"></label><label class="fld" style="margin:0">รหัสลับ (SECRET)<input id="uaKey" autocomplete="off"></label></div>
+<textarea id="uaScript" rows="10" readonly spellcheck="false" style="width:100%;margin-top:8px;font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;padding:8px;border:1px solid var(--line);border-radius:10px"></textarea>
+<div style="display:flex;gap:8px;margin-top:8px"><button class="btn" id="uaCopy" type="button">คัดลอกสคริปต์</button><button class="btn pri" id="uaSave" type="button">บันทึกและโหลดสถิติ</button></div></details>
+</div></section>
 <section class="card c6"><div class="ch"><h2>Admin · อัปเดตข้อมูล</h2></div><div class="cb">
 <div class="stat" id="aInfo"></div>
 <div class="fld"><label for="axl">เลือกไฟล์ Excel ใหม่ (รูปแบบเดียวกับ Refrash_UPSELL.xlsx: ชีต Raw, TARGET, TARGET STAFF, Shop list)</label><input id="axl" type="file" accept=".xlsx,.xlsm"></div>
@@ -453,6 +470,7 @@ function renderAdmin(){
   if(typeof genSms==='function'&&$('#smsTxt')&&!$('#smsTxt').dataset.edit){genSms()}
   const m=D.meta||{};
   $('#aInfo').innerHTML=`ข้อมูลปัจจุบัน: ณ <b>${esc(D.asof)}</b> · ${SH.length} ร้าน · ${ST.length} พนักงาน · ${f0(D.sales.length)} รายการขาย<br>อัปเดตล่าสุด: ${m.updated?esc(new Date(m.updated).toLocaleString('th-TH')):'–'} ${m.file?'· ไฟล์ '+esc(m.file):''}`;
+  if(typeof uaInit==='function')uaInit();
   if(!$('#aPub').value)$('#aPub').value=ADM.pubPw||'';
   if(!$('#aAdm').value)$('#aAdm').value=ADM.pw||'';
 }
@@ -1899,4 +1917,113 @@ function genSms(){delete $('#smsTxt').dataset.edit;try{$('#smsTxt').value=buildS
   $('#smsGen').onclick=genSms;$('#smsTxt').addEventListener('input',()=>{$('#smsTxt').dataset.edit=1;smsInfo()});
   c.onclick=async()=>{const t=$('#smsTxt').value;try{await navigator.clipboard.writeText(t)}catch(e){$('#smsTxt').select();try{document.execCommand('copy')}catch(x){}}flash('คัดลอกข้อความแล้ว')}};
   window.addEventListener('DOMContentLoaded',wire);wire()})();
+/* ================= Usage analytics (tracker + Admin report) ================= */
+const TRK_URL='';
+const TRK={url:()=>(store.get('uwp_trk_url')||TRK_URL||'').trim(),key:()=>store.get('uwp_trk_key')||'',q:[],t:0};
+(function(){
+  const ua=navigator.userAgent||'',dev=/ipad|tablet/i.test(ua)?'Tablet':/mobi|android|iphone/i.test(ua)?'Mobile':'Desktop';
+  const br=/edg\//i.test(ua)?'Edge':/chrome|crios/i.test(ua)?'Chrome':/safari/i.test(ua)?'Safari':/firefox/i.test(ua)?'Firefox':'Other';
+  let vid=store.get('uwp_vid');if(!vid){vid=Math.random().toString(36).slice(2,10)+Date.now().toString(36);store.set('uwp_vid',vid)}
+  let sid='';try{sid=sessionStorage.getItem('uwp_sid')||'';if(!sid){sid=Math.random().toString(36).slice(2,10);sessionStorage.setItem('uwp_sid',sid)}}catch(e){sid=sid||Math.random().toString(36).slice(2,10)}
+  const flush=()=>{clearTimeout(TRK.t);TRK.t=0;const u=TRK.url();if(!u||!TRK.q.length)return;const body=JSON.stringify(TRK.q.splice(0,50));
+    try{if(!(navigator.sendBeacon&&navigator.sendBeacon(u,body)))fetch(u,{method:'POST',mode:'no-cors',body,keepalive:true}).catch(()=>{})}catch(e){}};
+  const track=(ev,d)=>{if(!TRK.url()||!D)return;
+    TRK.q.push({ts:Date.now(),vid,sid,role:ROLE,ev,d:String(d||'').slice(0,120),tab:UI.tab||'',rg:(F.rg||[]).join('|'),ar:(F.ar||[]).join('|'),dev:dev+' · '+br,w:innerWidth,tz:(Intl.DateTimeFormat().resolvedOptions().timeZone||''),lang:navigator.language||''});
+    if(TRK.q.length>=10)flush();else if(!TRK.t)TRK.t=setTimeout(flush,4000)};
+  TRK.track=track;TRK.flush=flush;TRK.vid=vid;
+  addEventListener('pagehide',flush);document.addEventListener('visibilitychange',()=>{if(document.hidden)flush()});
+  const _b=boot;boot=function(){_b.apply(this,arguments);track('visit',document.referrer?'ref':'direct')};
+  const lab=el=>{const h=el.closest('.card');const hd=h&&h.querySelector('h2');const t=(el.dataset.t||el.getAttribute('aria-label')||el.id||el.textContent||'').trim().replace(/\s+/g,' ').slice(0,40);return(hd?hd.textContent.trim().slice(0,28)+' › ':'')+t};
+  document.addEventListener('click',e=>{if(!D)return;const el=e.target.closest&&e.target.closest('button,a,th,summary,[role=tab]');if(!el)return;
+    if(el.closest('#tabs')){track('tab',el.dataset.t||el.textContent.trim());return}
+    if(el.closest('.ms-p'))return;
+    track('click',(el.tagName==='TH'?'sort: ':'')+lab(el))},true);
+  document.addEventListener('change',e=>{if(!D)return;const el=e.target;if(!el.closest)return;
+    if(el.closest('.ms')){setTimeout(()=>track('filter',`${el.closest('.ms').id}: Region=${(F.rg||[]).length||'all'} Area=${(F.ar||[]).length||'all'} Type=${(F.ty||[]).length||'all'} PDT=${(UI.pdt||[]).length||'all'}`),80);return}
+    if(el.id)track('change',el.id)},true);
+})();
+
+const APPS_SCRIPT=key=>`// วางใน Google Sheet > Extensions > Apps Script แล้ว Deploy เป็น Web app (Execute as: Me, Access: Anyone)
+const SECRET='${key||'ตั้งรหัสลับของคุณ'}';
+function sh_(){const ss=SpreadsheetApp.getActiveSpreadsheet();let s=ss.getSheetByName('events');
+  if(!s){s=ss.insertSheet('events');s.appendRow(['ts','vid','sid','role','ev','detail','tab','region','area','device','width','tz','lang'])}return s}
+function doPost(e){try{const a=JSON.parse(e.postData.contents);const s=sh_();
+  const r=a.map(x=>[new Date(x.ts),x.vid,x.sid,x.role,x.ev,x.d,x.tab,x.rg,x.ar,x.dev,x.w,x.tz,x.lang]);
+  s.getRange(s.getLastRow()+1,1,r.length,r[0].length).setValues(r)}catch(err){}
+  return ContentService.createTextOutput('ok')}
+function doGet(e){const p=e.parameter;const out=o=>ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
+  if(p.key!==SECRET)return out({error:'forbidden'});
+  const s=sh_(),n=s.getLastRow();if(n<2)return out({rows:[]});
+  const from=+p.from||0,to=+p.to||Date.now();const st=Math.max(2,n-30000);
+  const v=s.getRange(st,1,n-st+1,13).getValues();
+  return out({rows:v.filter(r=>{const t=+new Date(r[0]);return t>=from&&t<=to}).map(r=>({ts:+new Date(r[0]),vid:r[1],sid:r[2],role:r[3],ev:r[4],d:r[5],tab:r[6],rg:r[7],ar:r[8],dev:r[9],w:r[10],tz:r[11],lang:r[12]}))})}`;
+
+let UA={rows:[],day:''};
+const bkkDay=ts=>new Date(ts+7*36e5).toISOString().slice(0,10);
+const dayRange=day=>{const s=Date.parse(day+'T00:00:00+07:00');return[s,s+864e5-1]};
+async function uaLoad(){
+  const st=$('#uaStat'),u=TRK.url(),k=TRK.key();
+  if(!u||!k){setStat(st,'ยังไม่ได้ตั้งค่า: วาง Web app URL และรหัสลับด้านล่าง แล้วกดบันทึก','err');return}
+  const day=$('#uaDay').value||bkkDay(Date.now());const[s0,s1]=dayRange(day);const f0_=s0-6*864e5;
+  setStat(st,'กำลังโหลดสถิติ…');
+  try{const r=await fetch(`${u}?key=${encodeURIComponent(k)}&from=${f0_}&to=${s1}`,{cache:'no-store'});const j=await r.json();
+    if(j.error)throw new Error(j.error==='forbidden'?'รหัสลับไม่ตรงกับสคริปต์':j.error);
+    UA={rows:j.rows||[],day};setStat(st,`โหลดแล้ว · ${f0(UA.rows.length)} เหตุการณ์ใน 7 วันล่าสุด`,'ok');uaRender()}
+  catch(e){setStat(st,'โหลดไม่สำเร็จ: '+(e.message||e)+' (ตรวจสอบ URL, การ Deploy แบบ Anyone และรหัสลับ)','err')}
+}
+function uaRender(){
+  const day=UA.day,[s0,s1]=dayRange(day),ex=$('#uaEx').checked;
+  const all=UA.rows.filter(r=>!(ex&&r.role==='adm')),rows=all.filter(r=>r.ts>=s0&&r.ts<=s1),prev=all.filter(r=>r.ts<s0);
+  const uniq=a=>new Set(a.map(r=>r.vid)).size;
+  const vis=uniq(rows),ses=new Set(rows.map(r=>r.sid)).size,tabs=rows.filter(r=>r.ev==='tab'),clk=rows.filter(r=>r.ev==='click'),fil=rows.filter(r=>r.ev==='filter');
+  const old=new Set(prev.map(r=>r.vid)),ret=new Set(rows.filter(r=>old.has(r.vid)).map(r=>r.vid)).size;
+  const bySes=new Map();rows.forEach(r=>{if(!bySes.has(r.sid))bySes.set(r.sid,[]);bySes.get(r.sid).push(r)});
+  const bounce=[...bySes.values()].filter(a=>a.filter(r=>r.ev!=='visit').length===0).length;
+  const dur=[...bySes.values()].map(a=>(Math.max(...a.map(r=>r.ts))-Math.min(...a.map(r=>r.ts)))/6e4);const avgDur=dur.length?dur.reduce((a,b)=>a+b,0)/dur.length:0;
+  const kp=[['ผู้เข้าใช้ (คนไม่ซ้ำ)',f0(vis),`${f0(vis-ret)} ใหม่ · ${f0(ret)} กลับมาใช้`],['จำนวนครั้งที่เข้า (Sessions)',f0(ses),ses?`เฉลี่ย ${(rows.length/ses).toFixed(1)} เหตุการณ์/ครั้ง`:''],['เปิดดูแท็บ',f0(tabs.length),''],['การคลิก',f0(clk.length),`ใช้ตัวกรอง ${f0(fil.length)} ครั้ง`],['ออกทันที (ไม่ทำอะไรต่อ)',ses?fp(bounce/ses):'–',`${f0(bounce)} จาก ${f0(ses)} ครั้ง`],['เวลาใช้เฉลี่ย',avgDur?avgDur.toFixed(1)+' นาที':'–','ต่อ session']];
+  $('#uaKpi').innerHTML=kp.map(x=>`<div class="k"><div class="l">${x[0]}</div><div class="v">${x[1]}</div><div class="s">${x[2]}</div></div>`).join('');
+  const cnt=(a,f)=>{const m=new Map();a.forEach(r=>{const k=f(r);if(!k)return;if(!m.has(k))m.set(k,{n:0,v:new Set()});const o=m.get(k);o.n++;o.v.add(r.vid)});return[...m].map(([k,o])=>({name:k,n:o.n,v:o.v.size})).sort((a,b)=>b.n-a.n)};
+  const T=(id,cols,rs,o)=>table(id,$('#'+id),{cols,rows:rs,total:null},o||{simple:true,sort:'n'});
+  const hr=[...Array(24)].map((_,h)=>({name:String(h).padStart(2,'0')+':00',n:0,v:new Set(),c:0}));
+  rows.forEach(r=>{const h=new Date(r.ts+7*36e5).getUTCHours();hr[h].n++;hr[h].v.add(r.vid);if(r.ev==='click')hr[h].c++});
+  const hrs=hr.map(o=>({name:o.name,v:o.v.size,n:o.n,c:o.c}));
+  T('uaHour',[{k:'name',l:'ชั่วโมง',t:'s'},{k:'v',l:'ผู้ใช้',t:'n'},{k:'n',l:'เหตุการณ์',t:'n'},{k:'c',l:'คลิก',t:'n'}],hrs,{simple:true,sort:'name',dir:1});
+  const tl={overall:'Over All',area:'By Area',shop:'By Shop',staff:'By Staff',camp:'Campaign',kit:'Sale Kit',insight:'Insight',admin:'Admin'};
+  T('uaTab',[{k:'name',l:'แท็บ',t:'s'},{k:'n',l:'ครั้งที่เปิด',t:'n'},{k:'v',l:'ผู้ใช้',t:'n'}],cnt(tabs,r=>tl[r.d]||r.d));
+  T('uaClick',[{k:'name',l:'สิ่งที่คลิก',t:'s',cls:'nm'},{k:'n',l:'ครั้ง',t:'n'},{k:'v',l:'ผู้ใช้',t:'n'}],cnt(clk,r=>r.d).slice(0,40));
+  const sp=a=>a.flatMap(r=>(r.rg?r.rg.split('|'):[]).map(x=>({...r,k:x})));
+  const rgR=[...rows.filter(r=>r.ev!=='visit'&&r.ev!=='tab'||true)];
+  T('uaRegion',[{k:'name',l:'Region ที่ดู',t:'s'},{k:'n',l:'เหตุการณ์',t:'n'},{k:'v',l:'ผู้ใช้',t:'n'}],cnt(rows.flatMap(r=>(r.rg?r.rg.split('|'):[]).map(x=>({vid:r.vid,k:x}))),r=>r.k));
+  T('uaArea',[{k:'name',l:'Area ที่ดู',t:'s'},{k:'n',l:'เหตุการณ์',t:'n'},{k:'v',l:'ผู้ใช้',t:'n'}],cnt(rows.flatMap(r=>(r.ar?r.ar.split('|'):[]).map(x=>({vid:r.vid,k:x}))),r=>r.k).slice(0,30));
+  T('uaDev',[{k:'name',l:'อุปกรณ์ · เบราว์เซอร์',t:'s'},{k:'n',l:'เหตุการณ์',t:'n'},{k:'v',l:'ผู้ใช้',t:'n'}],cnt(rows,r=>r.dev));
+  T('uaTz',[{k:'name',l:'เขตเวลา (ประมาณพื้นที่ผู้ใช้)',t:'s'},{k:'n',l:'เหตุการณ์',t:'n'},{k:'v',l:'ผู้ใช้',t:'n'}],cnt(rows,r=>r.tz));
+  const hh=ts=>new Date(ts+7*36e5).toISOString().slice(11,19);
+  T('uaLog',[{k:'t',l:'เวลา',t:'s'},{k:'u',l:'ผู้ใช้',t:'s'},{k:'role',l:'สิทธิ์',t:'s'},{k:'ev',l:'เหตุการณ์',t:'s'},{k:'d',l:'รายละเอียด',t:'s',cls:'nm'},{k:'ar',l:'Area ที่เลือก',t:'s'},{k:'dev',l:'อุปกรณ์',t:'s'}],
+    rows.slice().sort((a,b)=>b.ts-a.ts).slice(0,300).map(r=>({t:hh(r.ts),u:r.vid.slice(0,6),role:r.role==='adm'?'Admin':'ทั่วไป',ev:r.ev,d:r.d,ar:r.ar||'ทั้งหมด',dev:r.dev,ts:r.ts})),{simple:true,sort:'ts'});
+  /* insight */
+  const L=[];
+  if(!rows.length)L.push(`ยังไม่มีข้อมูลการเข้าใช้ในวันที่ ${day}`);
+  else{
+    const pk=hrs.slice().sort((a,b)=>b.n-a.n)[0];const tt=cnt(tabs,r=>tl[r.d]||r.d)[0],tc=cnt(clk,r=>r.d)[0];
+    const prevDays=[1,2,3,4,5,6].map(i=>{const[a,b]=dayRange(bkkDay(s0-i*864e5));return uniq(all.filter(r=>r.ts>=a&&r.ts<=b))});const pa=prevDays.filter(x=>x>0);
+    L.push(`วันที่ ${day} มีผู้เข้าใช้ <b>${f0(vis)}</b> คน (${f0(ses)} ครั้ง) · ช่วงที่ใช้งานมากสุดคือ <b>${pk.name} น.</b> (${f0(pk.n)} เหตุการณ์)`);
+    if(pa.length){const av=pa.reduce((a,b)=>a+b,0)/pa.length;L.push(`เทียบค่าเฉลี่ยผู้ใช้ต่อวันของ ${pa.length} วันก่อนหน้า (${av.toFixed(1)} คน): ${vis>=av?'สูงกว่า':'ต่ำกว่า'} ${fp(Math.abs(vis/av-1))}`)}
+    if(tt)L.push(`แท็บที่คนเปิดมากสุด: <b>${esc(tt.name)}</b> (${f0(tt.n)} ครั้ง)${tc?` · สิ่งที่คลิกบ่อยสุด: ${esc(tc.name)}`:''}`);
+    const ar=cnt(rows.flatMap(r=>(r.ar?r.ar.split('|'):[]).map(x=>({vid:r.vid,k:x}))),r=>r.k)[0];
+    L.push(ar?`Area ที่ถูกเลือกดูมากสุด: <b>${esc(ar.name)}</b> · ผู้ใช้ส่วนใหญ่ ${fil.length?'มีการใช้ตัวกรอง':'ดูภาพรวมทั้งหมดโดยไม่กรอง'}`:'ผู้ใช้ยังไม่ได้กรองตาม Area (ดูภาพรวมทั้งหมด)');
+    const mo=rows.filter(r=>/Mobile/.test(r.dev)).length;L.push(`ใช้งานบนมือถือ ${fp(mo/rows.length)} ของเหตุการณ์ทั้งหมด`);
+    if(ses&&bounce/ses>=.4)L.push(`⚠ ${fp(bounce/ses)} ของการเข้าใช้ออกทันทีโดยไม่เปิดแท็บ/คลิก — อาจเป็นเพราะเปิดแล้วดูภาพรวมหน้าแรกเพียงอย่างเดียว`);
+    const ev=new Set(rows.map(r=>r.ev));if(!ev.has('tab'))L.push('ยังไม่พบการสลับแท็บ');
+  }
+  $('#uaIns').innerHTML=L.map(x=>`<li>${x}</li>`).join('');
+}
+function uaInit(){
+  const c=$('#uaCard');if(!c||c.dataset.w)return;c.dataset.w=1;
+  $('#uaDay').value=bkkDay(Date.now());$('#uaUrl').value=TRK.url();$('#uaKey').value=TRK.key();
+  const sc=()=>{$('#uaScript').value=APPS_SCRIPT($('#uaKey').value.trim())};sc();$('#uaKey').addEventListener('input',sc);
+  $('#uaSave').onclick=()=>{store.set('uwp_trk_url',$('#uaUrl').value.trim());store.set('uwp_trk_key',$('#uaKey').value.trim());flash('บันทึกการตั้งค่าแล้ว');uaLoad()};
+  $('#uaLoad').onclick=uaLoad;$('#uaDay').onchange=uaLoad;$('#uaEx').onchange=()=>UA.rows.length&&uaRender();
+  $('#uaCopy').onclick=async()=>{const t=$('#uaScript').value;try{await navigator.clipboard.writeText(t)}catch(e){$('#uaScript').select();try{document.execCommand('copy')}catch(x){}}flash('คัดลอกสคริปต์แล้ว')};
+  if(TRK.url()&&TRK.key())uaLoad();else $('#uaSetup').open=true;
+}
 </script>
