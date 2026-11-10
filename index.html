@@ -203,7 +203,7 @@ thead th{background:var(--surface2)}
       <label>Shop Type<select id="fTy"></select></label>
       <button class="btn" id="fReset">ล้างตัวกรอง</button>
       <button class="btn pri" id="xAll">Export Excel (ทั้งหมด)</button>
-      <button class="btn" id="rfBtn">รีเฟรชข้อมูล</button>
+      <button class="btn" id="rfBtn" style="display:none">รีเฟรชข้อมูล</button>
       <button class="btn" id="lock">ออกจากระบบ</button>
     </div>
   </div>
@@ -365,6 +365,7 @@ function showTab(t){
   TABS.forEach(x=>{const p=$('#p-'+x);if(p)p.hidden=x!==t});
   document.querySelectorAll('#tabs button').forEach(b=>{const on=b.dataset.t===t;b.classList.toggle('on',on);b.setAttribute('aria-selected',on)});
   if(t==='admin')renderAdmin();
+  {const rb=document.getElementById('rfBtn');if(rb)rb.style.display=ROLE==='adm'&&t==='admin'?'':'none'}
   if(t==='kit'&&D)renderKit();
   if(scope)renderCharts();
 }
@@ -613,7 +614,7 @@ async function checkLive(manual){
 }
 function startLive(){
   LASTIV=PAY&&PAY.data?PAY.data.iv:'';clearInterval(LIVET);
-  $('#rfBtn').onclick=()=>checkLive(true);
+  $('#rfBtn').onclick=()=>checkLive(true);$('#rfBtn').style.display=ROLE==='adm'&&UI.tab==='admin'?'':'none';
 }
 function syncSegs(){
   const m={rkShop:'rkShop',nsDim:'ns',cpCat:'camp',rqDim:'rq',trTab:'tr',metSeg:'metric'};
