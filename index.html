@@ -293,11 +293,11 @@ thead th{background:var(--surface2)}
 <div style="margin-top:14px"><div><h3>ตำแหน่งผู้ใช้โดยประมาณ (เขตเวลา)</h3><div id="uaTz"></div></div></div>
 <div style="margin-top:14px"><div><h3>กิจกรรมล่าสุด (300 รายการ)</h3><div id="uaLog"></div></div></div>
 <p class="note">ไม่เก็บชื่อ/เบอร์/IP · ระบุผู้ใช้ด้วยรหัสสุ่มในเบราว์เซอร์ · "พื้นที่" = Region/Area ที่ผู้ใช้เลือกกรองตอนดูข้อมูล เพราะรหัสเข้าใช้ร่วมกันทุกคน จึงระบุตัวตนรายบุคคลไม่ได้</p>
-<details id="uaSetup" style="margin-top:12px"><summary style="cursor:pointer;font-weight:600">ตั้งค่าการเก็บสถิติ (ทำครั้งเดียว)</summary>
-<ol class="note" style="line-height:1.8;padding-left:18px"><li>สร้าง Google Sheet ใหม่ → Extensions → Apps Script</li><li>ตั้งรหัสลับ (ช่องด้านล่าง) แล้วคัดลอกสคริปต์ไปวางแทนโค้ดเดิม → Deploy → New deployment → Web app → Execute as: <b>Me</b> · Who has access: <b>Anyone</b></li><li>คัดลอก Web app URL (ลงท้าย /exec) มาวางด้านล่าง แล้วกดบันทึก — จากนั้นส่ง URL ให้ผู้พัฒนาฝังในหน้าเว็บเพื่อให้ผู้ใช้ทุกคนถูกบันทึก</li></ol>
-<div style="display:grid;gap:8px;grid-template-columns:1fr 1fr"><label class="fld" style="margin:0">Web app URL<input id="uaUrl" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off"></label><label class="fld" style="margin:0">รหัสลับ (SECRET)<input id="uaKey" autocomplete="off"></label></div>
-<textarea id="uaScript" rows="10" readonly spellcheck="false" style="width:100%;margin-top:8px;font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;padding:8px;border:1px solid var(--line);border-radius:10px"></textarea>
-<div style="display:flex;gap:8px;margin-top:8px"><button class="btn" id="uaCopy" type="button">คัดลอกสคริปต์</button><button class="btn pri" id="uaSave" type="button">บันทึกและโหลดสถิติ</button></div></details>
+<details id="uaSetup" style="margin-top:12px"><summary style="cursor:pointer;font-weight:600">ตั้งค่าการเก็บสถิติ <span id="uaOn" class="pill warn">ยังไม่เปิดใช้งาน</span></summary>
+<ol class="note" style="line-height:1.8;padding-left:18px"><li>GitHub → Settings → Developer settings → Fine-grained tokens → Generate new token</li><li>เลือก Repository เฉพาะ <b>Upsell-True-Online-Performance-Dashboard</b> · Permissions → <b>Issues: Read and write</b> เท่านั้น</li><li>วางโทเคนด้านล่างแล้วกด "เปิดใช้งาน" (ระบบสร้างที่เก็บสถิติและเผยแพร่ให้เอง ต้องตั้งโทเคนอัปโหลดข้อมูลไว้ก่อนแล้ว)</li></ol>
+<div id="uaTokRow" style="display:flex;gap:8px;flex-wrap:wrap;align-items:end"><label class="fld" style="margin:0;flex:1;min-width:240px">GitHub Token (Issues)<input id="uaTok" type="password" autocomplete="off" placeholder="github_pat_…"></label><button class="btn pri" id="uaEnable" type="button">เปิดใช้งานการเก็บสถิติ</button></div>
+<button class="btn" id="uaOff" type="button" hidden>ปิดการเก็บสถิติ</button>
+<p class="note">ความปลอดภัย: โทเคนนี้อยู่ในข้อมูลที่เข้ารหัส ผู้ที่รู้รหัสเข้าใช้เปิดได้ แต่สิทธิ์จำกัดแค่ Issues ของ repo นี้ จึงแก้โค้ด/ข้อมูลแดชบอร์ดไม่ได้ · บันทึกสถิติเก็บเป็นคอมเมนต์ใน Issue "Usage log" ซึ่งใครเปิด repo สาธารณะก็อ่านได้ (ไม่มีชื่อ/เบอร์/IP)</p></details>
 </div></section>
 <section class="card c6"><div class="ch"><h2>Admin · อัปเดตข้อมูล</h2></div><div class="cb">
 <div class="stat" id="aInfo"></div>
@@ -578,7 +578,7 @@ function bindAdmin(){
   };
   $('#aKitSave').onclick=async()=>{if(!NEWK)return;adoptTok();$('#aKitSave').disabled=true;await publishData({...D,kit:NEWK},ADM.pubPw,ADM.pw,$('#aKitStat'),'บันทึก Sale Kit เรียบร้อย ผู้ใช้ทุกคนจะเห็นสไลด์ใหม่');if(!/ไม่สำเร็จ|ไม่ได้|ปฏิเสธ|ไม่พบ/.test($('#aKitStat').textContent)){NEWK=null;$('#akit').value='';try{showTab('kit')}catch(e){}}else $('#aKitSave').disabled=false};
   $('#kTok').addEventListener('change',()=>{if(NEWK&&$('#kTok').value.trim())$('#aKitSave').click()});
-  $('#aSave').onclick=async()=>{if(!NEWD)return;$('#aSave').disabled=true;await publishData(D.kit?{...NEWD,kit:D.kit}:NEWD,$('#aPub').value.trim()||ADM.pubPw,$('#aAdm').value.trim()||ADM.pw,$('#aStat'),'บันทึกข้อมูลใหม่เรียบร้อย ผู้ใช้ทุกคนจะเห็นข้อมูลล่าสุด');NEWD=null;$('#aPrev').innerHTML='';$('#axl').value=''};
+  $('#aSave').onclick=async()=>{if(!NEWD)return;$('#aSave').disabled=true;await publishData({...NEWD,...(D.kit?{kit:D.kit}:{}),...(D.trk?{trk:D.trk}:{})},$('#aPub').value.trim()||ADM.pubPw,$('#aAdm').value.trim()||ADM.pw,$('#aStat'),'บันทึกข้อมูลใหม่เรียบร้อย ผู้ใช้ทุกคนจะเห็นข้อมูลล่าสุด');NEWD=null;$('#aPrev').innerHTML='';$('#axl').value=''};
   $('#aPw').onclick=async()=>{
     const pp=$('#aPub').value.trim(),ap=$('#aAdm').value.trim(),st=$('#aPwStat');
     if(pp.length<6||ap.length<6)return setStat(st,'รหัสต้องยาวอย่างน้อย 6 ตัวอักษร','err');
@@ -1918,18 +1918,17 @@ function genSms(){delete $('#smsTxt').dataset.edit;try{$('#smsTxt').value=buildS
   c.onclick=async()=>{const t=$('#smsTxt').value;try{await navigator.clipboard.writeText(t)}catch(e){$('#smsTxt').select();try{document.execCommand('copy')}catch(x){}}flash('คัดลอกข้อความแล้ว')}};
   window.addEventListener('DOMContentLoaded',wire);wire()})();
 /* ================= Usage analytics (tracker + Admin report) ================= */
-const TRK_URL='';
-const TRK={url:()=>(store.get('uwp_trk_url')||TRK_URL||'').trim(),key:()=>store.get('uwp_trk_key')||'',q:[],t:0};
+const TRK={cfg:()=>D&&D.trk&&D.trk.tok&&D.trk.issue?D.trk:null,q:[],t:0};
 (function(){
   const ua=navigator.userAgent||'',dev=/ipad|tablet/i.test(ua)?'Tablet':/mobi|android|iphone/i.test(ua)?'Mobile':'Desktop';
   const br=/edg\//i.test(ua)?'Edge':/chrome|crios/i.test(ua)?'Chrome':/safari/i.test(ua)?'Safari':/firefox/i.test(ua)?'Firefox':'Other';
   let vid=store.get('uwp_vid');if(!vid){vid=Math.random().toString(36).slice(2,10)+Date.now().toString(36);store.set('uwp_vid',vid)}
   let sid='';try{sid=sessionStorage.getItem('uwp_sid')||'';if(!sid){sid=Math.random().toString(36).slice(2,10);sessionStorage.setItem('uwp_sid',sid)}}catch(e){sid=sid||Math.random().toString(36).slice(2,10)}
-  const flush=()=>{clearTimeout(TRK.t);TRK.t=0;const u=TRK.url();if(!u||!TRK.q.length)return;const body=JSON.stringify(TRK.q.splice(0,50));
-    try{if(!(navigator.sendBeacon&&navigator.sendBeacon(u,body)))fetch(u,{method:'POST',mode:'no-cors',body,keepalive:true}).catch(()=>{})}catch(e){}};
-  const track=(ev,d)=>{if(!TRK.url()||!D)return;
+  const flush=()=>{clearTimeout(TRK.t);TRK.t=0;const c=TRK.cfg();if(!c||!TRK.q.length)return;const batch=TRK.q.splice(0,60);
+    try{fetch(`https://api.github.com/repos/${c.repo}/issues/${c.issue}/comments`,{method:'POST',keepalive:true,headers:{Authorization:'Bearer '+c.tok,Accept:'application/vnd.github+json','Content-Type':'application/json'},body:JSON.stringify({body:'```json\n'+JSON.stringify(batch)+'\n```'})}).catch(()=>{})}catch(e){}};
+  const track=(ev,d)=>{if(!TRK.cfg())return;
     TRK.q.push({ts:Date.now(),vid,sid,role:ROLE,ev,d:String(d||'').slice(0,120),tab:UI.tab||'',rg:(F.rg||[]).join('|'),ar:(F.ar||[]).join('|'),dev:dev+' · '+br,w:innerWidth,tz:(Intl.DateTimeFormat().resolvedOptions().timeZone||''),lang:navigator.language||''});
-    if(TRK.q.length>=10)flush();else if(!TRK.t)TRK.t=setTimeout(flush,4000)};
+    if(TRK.q.length>=25)flush();else if(!TRK.t)TRK.t=setTimeout(flush,20000)};
   TRK.track=track;TRK.flush=flush;TRK.vid=vid;
   addEventListener('pagehide',flush);document.addEventListener('visibilitychange',()=>{if(document.hidden)flush()});
   const _b=boot;boot=function(){_b.apply(this,arguments);track('visit',document.referrer?'ref':'direct')};
@@ -1943,33 +1942,23 @@ const TRK={url:()=>(store.get('uwp_trk_url')||TRK_URL||'').trim(),key:()=>store.
     if(el.id)track('change',el.id)},true);
 })();
 
-const APPS_SCRIPT=key=>`// วางใน Google Sheet > Extensions > Apps Script แล้ว Deploy เป็น Web app (Execute as: Me, Access: Anyone)
-const SECRET='${key||'ตั้งรหัสลับของคุณ'}';
-function sh_(){const ss=SpreadsheetApp.getActiveSpreadsheet();let s=ss.getSheetByName('events');
-  if(!s){s=ss.insertSheet('events');s.appendRow(['ts','vid','sid','role','ev','detail','tab','region','area','device','width','tz','lang'])}return s}
-function doPost(e){try{const a=JSON.parse(e.postData.contents);const s=sh_();
-  const r=a.map(x=>[new Date(x.ts),x.vid,x.sid,x.role,x.ev,x.d,x.tab,x.rg,x.ar,x.dev,x.w,x.tz,x.lang]);
-  s.getRange(s.getLastRow()+1,1,r.length,r[0].length).setValues(r)}catch(err){}
-  return ContentService.createTextOutput('ok')}
-function doGet(e){const p=e.parameter;const out=o=>ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
-  if(p.key!==SECRET)return out({error:'forbidden'});
-  const s=sh_(),n=s.getLastRow();if(n<2)return out({rows:[]});
-  const from=+p.from||0,to=+p.to||Date.now();const st=Math.max(2,n-30000);
-  const v=s.getRange(st,1,n-st+1,13).getValues();
-  return out({rows:v.filter(r=>{const t=+new Date(r[0]);return t>=from&&t<=to}).map(r=>({ts:+new Date(r[0]),vid:r[1],sid:r[2],role:r[3],ev:r[4],d:r[5],tab:r[6],rg:r[7],ar:r[8],dev:r[9],w:r[10],tz:r[11],lang:r[12]}))})}`;
-
 let UA={rows:[],day:''};
 const bkkDay=ts=>new Date(ts+7*36e5).toISOString().slice(0,10);
 const dayRange=day=>{const s=Date.parse(day+'T00:00:00+07:00');return[s,s+864e5-1]};
 async function uaLoad(){
-  const st=$('#uaStat'),u=TRK.url(),k=TRK.key();
-  if(!u||!k){setStat(st,'ยังไม่ได้ตั้งค่า: วาง Web app URL และรหัสลับด้านล่าง แล้วกดบันทึก','err');return}
-  const day=$('#uaDay').value||bkkDay(Date.now());const[s0,s1]=dayRange(day);const f0_=s0-6*864e5;
+  const st=$('#uaStat'),c=TRK.cfg();
+  if(!c){setStat(st,'ยังไม่ได้เปิดใช้งานการเก็บสถิติ — เปิด "ตั้งค่าการเก็บสถิติ" ด้านล่าง','err');return}
+  const day=$('#uaDay').value||bkkDay(Date.now());const[s0,s1]=dayRange(day);const from=s0-6*864e5;
   setStat(st,'กำลังโหลดสถิติ…');
-  try{const r=await fetch(`${u}?key=${encodeURIComponent(k)}&from=${f0_}&to=${s1}`,{cache:'no-store'});const j=await r.json();
-    if(j.error)throw new Error(j.error==='forbidden'?'รหัสลับไม่ตรงกับสคริปต์':j.error);
-    UA={rows:j.rows||[],day};setStat(st,`โหลดแล้ว · ${f0(UA.rows.length)} เหตุการณ์ใน 7 วันล่าสุด`,'ok');uaRender()}
-  catch(e){setStat(st,'โหลดไม่สำเร็จ: '+(e.message||e)+' (ตรวจสอบ URL, การ Deploy แบบ Anyone และรหัสลับ)','err')}
+  try{const rows=[];
+    for(let pg=1;pg<=40;pg++){
+      const r=await fetch(`https://api.github.com/repos/${c.repo}/issues/${c.issue}/comments?per_page=100&page=${pg}&since=${new Date(from).toISOString()}`,{headers:{Authorization:'Bearer '+c.tok,Accept:'application/vnd.github+json'},cache:'no-store'});
+      if(!r.ok)throw new Error(r.status===401||r.status===403?'โทเคนไม่มีสิทธิ์ (ต้องมี Issues: Read and write)':'HTTP '+r.status);
+      const j=await r.json();
+      j.forEach(m=>{try{const t=m.body.replace(/^```json\s*|\s*```$/g,'');JSON.parse(t).forEach(x=>{if(x.ts>=from&&x.ts<=s1)rows.push(x)})}catch(e){}});
+      if(j.length<100)break}
+    UA={rows,day};setStat(st,`โหลดแล้ว · ${f0(rows.length)} เหตุการณ์ใน 7 วันล่าสุด`,'ok');uaRender()}
+  catch(e){setStat(st,'โหลดไม่สำเร็จ: '+(e.message||e),'err')}
 }
 function uaRender(){
   const day=UA.day,[s0,s1]=dayRange(day),ex=$('#uaEx').checked;
@@ -2019,11 +2008,17 @@ function uaRender(){
 }
 function uaInit(){
   const c=$('#uaCard');if(!c||c.dataset.w)return;c.dataset.w=1;
-  $('#uaDay').value=bkkDay(Date.now());$('#uaUrl').value=TRK.url();$('#uaKey').value=TRK.key();
-  const sc=()=>{$('#uaScript').value=APPS_SCRIPT($('#uaKey').value.trim())};sc();$('#uaKey').addEventListener('input',sc);
-  $('#uaSave').onclick=()=>{store.set('uwp_trk_url',$('#uaUrl').value.trim());store.set('uwp_trk_key',$('#uaKey').value.trim());flash('บันทึกการตั้งค่าแล้ว');uaLoad()};
+  $('#uaDay').value=bkkDay(Date.now());
+  const sync=()=>{const on=!!TRK.cfg();$('#uaOn').textContent=on?'เปิดใช้งานแล้ว · กำลังเก็บสถิติผู้ใช้ทุกคน':'ยังไม่เปิดใช้งาน';$('#uaOn').className='pill '+(on?'good':'warn');$('#uaTokRow').hidden=on;$('#uaOff').hidden=!on};
+  sync();
   $('#uaLoad').onclick=uaLoad;$('#uaDay').onchange=uaLoad;$('#uaEx').onchange=()=>UA.rows.length&&uaRender();
-  $('#uaCopy').onclick=async()=>{const t=$('#uaScript').value;try{await navigator.clipboard.writeText(t)}catch(e){$('#uaScript').select();try{document.execCommand('copy')}catch(x){}}flash('คัดลอกสคริปต์แล้ว')};
-  if(TRK.url()&&TRK.key())uaLoad();else $('#uaSetup').open=true;
+  $('#uaEnable').onclick=async()=>{const tok=$('#uaTok').value.trim(),st=$('#uaStat');if(!tok){setStat(st,'วางโทเคนก่อน','err');return}
+    const repo=(ghCfg().repo||GH_DEF).trim();$('#uaEnable').disabled=true;setStat(st,'กำลังสร้างที่เก็บสถิติใน GitHub…');
+    try{const r=await fetch(`https://api.github.com/repos/${repo}/issues`,{method:'POST',headers:{Authorization:'Bearer '+tok,Accept:'application/vnd.github+json','Content-Type':'application/json'},body:JSON.stringify({title:'Usage log (auto) — อย่าลบ',body:'บันทึกการเข้าใช้งานแดชบอร์ดแบบอัตโนมัติ (ไม่มีข้อมูลส่วนบุคคล)'})});
+      if(!r.ok)throw new Error(r.status===404||r.status===403||r.status===401?'โทเคนไม่มีสิทธิ์ Issues: Read and write บน repo นี้ (หรือ repo ปิด Issues)':'HTTP '+r.status);
+      const j=await r.json();await publishData({...D,trk:{tok,issue:j.number,repo}},ADM.pubPw,ADM.pw,st,'เปิดใช้งานการเก็บสถิติแล้ว');sync();$('#uaTok').value='';uaLoad()}
+    catch(e){setStat(st,'เปิดใช้งานไม่สำเร็จ: '+(e.message||e),'err')}$('#uaEnable').disabled=false};
+  $('#uaOff').onclick=async()=>{const{trk,...rest}=D;await publishData(rest,ADM.pubPw,ADM.pw,$('#uaStat'),'ปิดการเก็บสถิติแล้ว');sync()};
+  if(TRK.cfg())uaLoad();else $('#uaSetup').open=true;
 }
 </script>
